@@ -1,0 +1,58 @@
+.lift-card img {
+    width: 300px;
+    height: auto;
+}
+
+.data.viz {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 10px;
+}
+
+.data.viz .tableauPlaceholder,
+.data.viz object.tableauViz {
+  width: 100% !important;
+}
+
+.data.viz object.tableauViz {
+  height: 520px !important;
+}
+
+body {
+    background-color: #eef2f5;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.benefits{
+    text-align: center;
+}
+
+#intro-line{
+    font-weight: bold;
+    color: #2b2b2b;
+}
+
+h2{
+    color: #1f2933;
+}
+
+h3{
+    color:  #111827;
+}
+
+.workoutdays{
+    text-decoration: underline;
+}
+
+.links{
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 200px;
+  background-color: #ffffff;
+  border: 10px solid #ddd;
+  border-radius: 8px;
+}

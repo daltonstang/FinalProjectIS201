@@ -1,0 +1,1944 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cabin 12: Escape Room</title>
+  <style>
+    :root{
+      --bg0:#070a0b;
+      --bg1:#0b1111;
+      --ink:#e7efe9;
+      --muted:#b7c3bb;
+      --panel:#0d1312e6;
+      --panel2:#0b100fe6;
+      --accent:#b9d7c8;
+      --warn:#ffd9a3;
+      --danger:#e6a7a7;
+      --ok:#b9f2c2;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: radial-gradient(1100px 700px at 55% 35%, #101918 0%, var(--bg0) 60%, #050607 100%);
+      color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      overflow:hidden;
+    }
+
+    .wrap{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+
+    .frame{
+      width:min(1120px, 96vw);
+      height:min(720px, 90vh);
+      border-radius:20px;
+      position:relative;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.06);
+      background:
+        radial-gradient(900px 520px at 60% 25%, rgba(185,215,200,.06), transparent 60%),
+        radial-gradient(600px 360px at 20% 70%, rgba(255,217,163,.05), transparent 70%),
+        linear-gradient(180deg, rgba(12,16,16,.92), rgba(7,10,11,.92));
+      overflow:hidden;
+    }
+
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      cursor: crosshair;
+    }
+
+    .hud{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .topbar{
+      position:absolute;
+      top:14px;
+      left:14px;
+      right:14px;
+      display:flex;
+      gap:12px;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+
+    .pill{
+      pointer-events:none;
+      background: var(--panel);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:10px 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      max-width: 440px;
+    }
+
+    .pill h1{
+      margin:0;
+      font-size:12px;
+      letter-spacing:.10em;
+      font-weight:900;
+      text-transform:uppercase;
+      color: var(--accent);
+    }
+    .pill .sub{
+      margin-top:6px;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+
+    .stack{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:flex-end;
+    }
+
+    .meterRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      margin-top:6px;
+    }
+    .meter{
+      width:160px;
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .meter > i{
+      display:block;
+      height:100%;
+      width:40%;
+      background: linear-gradient(90deg, rgba(255,217,163,.18), rgba(255,217,163,.85));
+      border-radius:999px;
+    }
+    .meterLabel{
+      font-size:12px;
+      color: var(--muted);
+      letter-spacing:.02em;
+    }
+
+    .dialogue{
+      position:absolute;
+      left:14px;
+      bottom:14px;
+      width:min(600px, calc(100% - 28px));
+      pointer-events:none;
+      background: var(--panel2);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:12px 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 30px rgba(0,0,0,.45);
+    }
+    .dialogue .name{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:0 0 6px 0;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color: var(--accent);
+      font-weight:900;
+    }
+    .dialogue .line{
+      margin:0;
+      font-size:13px;
+      line-height:1.35;
+      color: var(--ink);
+    }
+    .dialogue .hint{
+      margin-top:8px;
+      font-size:12px;
+      color: var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .centerCard{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .modal{
+      pointer-events:auto;
+      width:min(760px, calc(100% - 34px));
+      background: rgba(9,12,12,.94);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:18px 18px 16px;
+      box-shadow: 0 22px 70px rgba(0,0,0,.65);
+      backdrop-filter: blur(12px);
+    }
+    .modal h2{
+      margin:0 0 8px 0;
+      font-size:18px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color: var(--accent);
+    }
+    .modal p{
+      margin:8px 0;
+      color: var(--muted);
+      line-height:1.45;
+      font-size:13px;
+    }
+    .kbd{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--ink);
+      font-size:12px;
+      letter-spacing:.02em;
+      margin:0 2px;
+    }
+    .btnRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    button{
+      pointer-events:auto;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(185,215,200,.10);
+      color: var(--ink);
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:900;
+      letter-spacing:.04em;
+      cursor:pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover{ transform: translateY(-1px); background: rgba(185,215,200,.16); border-color: rgba(255,255,255,.20); }
+    button:active{ transform: translateY(0px); }
+
+    .toast{
+      position:absolute;
+      top:14px;
+      left:50%;
+      transform: translateX(-50%);
+      background: rgba(9,12,12,.94);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      color: var(--ink);
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .18s ease, transform .18s ease;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    .toast.on{ opacity:1; transform: translateX(-50%) translateY(2px); }
+
+    .centerCard#endModal{ display:none; }
+    .centerCard#pauseModal{ display:none; }
+
+    /* Context menu */
+    .menu{
+      position:absolute;
+      pointer-events:auto;
+      background: rgba(10,14,14,.96);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:8px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.6);
+      min-width: 210px;
+      display:none;
+    }
+    .menu.on{ display:block; }
+    .menu .title{
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color: var(--accent);
+      font-weight:900;
+      margin:2px 6px 8px;
+    }
+    .menu button{
+      width:100%;
+      text-align:left;
+      margin:4px 0;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      padding:9px 10px;
+      font-weight:800;
+    }
+    .menu button:hover{ background: rgba(255,217,163,.10); }
+    .menu .small{
+      margin:8px 6px 4px;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="frame">
+    <canvas id="game" width="1120" height="720"></canvas>
+
+    <div class="hud">
+      <div class="toast" id="toast">…</div>
+
+      <div class="topbar">
+        <div class="pill">
+          <h1 id="roomTitle">Room</h1>
+          <div class="sub" id="objectiveText">Objective…</div>
+        </div>
+
+        <div class="stack">
+          <div class="pill">
+            <h1>Controls</h1>
+            <div class="sub">
+              Move: <span class="kbd">WASD</span> or <span class="kbd">Arrows</span><br/>
+              Interact: <span class="kbd">Click</span><br/>
+              Context actions: menu pops up<br/>
+              Hide (if available): <span class="kbd">Space</span><br/>
+              Hint: <span class="kbd">H</span> (escalates)<br/>
+              Pause: <span class="kbd">P</span>
+            </div>
+          </div>
+          <div class="pill">
+            <h1>Pressure</h1>
+            <div class="meterRow">
+              <span class="meterLabel">Attention</span>
+              <span class="meter"><i id="pressureBar"></i></span>
+            </div>
+            <div class="meterRow">
+              <span class="meterLabel">Threat</span>
+              <span class="meter"><i id="threatBar"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialogue">
+        <div class="name">
+          <span>COMPANION: PINE</span>
+          <span style="color:var(--muted); letter-spacing:.02em; text-transform:none;" id="moodLabel">mood: watchful</span>
+        </div>
+        <p class="line" id="dialogueLine">Click objects. If you get stuck, press H.</p>
+        <div class="hint">
+          <span id="hintLeft">Tip: First room is gentle. No pixel hunting.</span>
+          <span id="hintRight">Mistakes raise attention, not instant fail.</span>
+        </div>
+      </div>
+
+      <div class="centerCard" id="startModal">
+        <div class="modal">
+          <h2>Cabin 12: Escape Room</h2>
+          <p>
+            You woke up in a mountain cabin that feels older than it looks.
+            Rooms do not move. The cabin is steady. The rules are not.
+          </p>
+          <p>
+            <strong>Goal:</strong> solve 4–5 rooms, unlock the ridge gate, escape.
+            Puzzles remix each run, but they stay fair.
+          </p>
+          <p>
+            Start: click objects, pick actions from the menu. If something can be interacted with, it will glow when you are near.
+          </p>
+          <div class="btnRow">
+            <button id="btnStart">Start</button>
+            <button id="btnChill">Chill (less threat)</button>
+            <button id="btnHard">Spooky (more threat)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="centerCard" id="endModal">
+        <div class="modal">
+          <h2 id="endTitle">…</h2>
+          <p id="endText">…</p>
+          <div class="btnRow">
+            <button id="btnRestart">Restart</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="centerCard" id="pauseModal">
+        <div class="modal">
+          <h2>Paused</h2>
+          <p>Press <span class="kbd">P</span> to resume.</p>
+          <div class="btnRow">
+            <button id="btnResume">Resume</button>
+            <button id="btnRestart2">Restart</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu" id="menu">
+        <div class="title" id="menuTitle">Object</div>
+        <div id="menuButtons"></div>
+        <div class="small" id="menuDesc">…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CABIN 12: ESCAPE ROOM (single HTML file)
+   Hybrid: WASD movement + mouse contextual actions
+   Puzzle remix each run, difficulty: thought provoking but fair
+   ========================================================= */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+  startModal: document.getElementById("startModal"),
+  endModal: document.getElementById("endModal"),
+  pauseModal: document.getElementById("pauseModal"),
+  endTitle: document.getElementById("endTitle"),
+  endText: document.getElementById("endText"),
+  roomTitle: document.getElementById("roomTitle"),
+  objectiveText: document.getElementById("objectiveText"),
+  dialogueLine: document.getElementById("dialogueLine"),
+  moodLabel: document.getElementById("moodLabel"),
+  toast: document.getElementById("toast"),
+  pressureBar: document.getElementById("pressureBar"),
+  threatBar: document.getElementById("threatBar"),
+  menu: document.getElementById("menu"),
+  menuTitle: document.getElementById("menuTitle"),
+  menuButtons: document.getElementById("menuButtons"),
+  menuDesc: document.getElementById("menuDesc"),
+};
+
+document.getElementById("btnStart").onclick = () => startGame("normal");
+document.getElementById("btnChill").onclick = () => startGame("chill");
+document.getElementById("btnHard").onclick = () => startGame("hard");
+document.getElementById("btnRestart").onclick = () => location.reload();
+document.getElementById("btnRestart2").onclick = () => location.reload();
+document.getElementById("btnResume").onclick = () => togglePause(false);
+
+const CONFIG = {
+  playerSpeed: 170,
+  sprintMult: 1.55,
+  playerR: 12,
+  interactRange: 44,
+  cameraLerp: 0.14,
+
+  fogAlpha: 0.80,
+  lightRadius: 170,
+  lightSoftness: 0.56,
+
+  // Threat tuning
+  baseAttentionGain: 0.010,   // passive gain per sec while in a room
+  mistakeAttentionGain: 0.12, // wrong attempts
+  threatTriggerAt: 0.72,      // attention threshold to trigger threat
+  threatDuration: 8.0,        // seconds active
+  threatCatchDist: 70,        // if close while visible and not hidden
+
+  chill: { baseAttentionGain: 0.007, mistakeAttentionGain: 0.09, threatDuration: 6.5 },
+  hard:  { baseAttentionGain: 0.014, mistakeAttentionGain: 0.14, threatDuration: 9.5 }
+};
+
+const keys = new Set();
+let mouse = {x:0, y:0, clicked:false};
+
+window.addEventListener("keydown", (e)=>{
+  const k = e.key.toLowerCase();
+  if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k)) e.preventDefault();
+  keys.add(k);
+
+  if(k==="p" && state.started && !state.ended) togglePause();
+  if(k==="h" && state.started && !state.ended && !state.paused) requestHint();
+  if(k===" " && state.started && !state.ended && !state.paused) tryHideOrUnhide();
+});
+
+window.addEventListener("keyup", (e)=> keys.delete(e.key.toLowerCase()));
+
+canvas.addEventListener("mousemove", (e)=>{
+  const r = canvas.getBoundingClientRect();
+  mouse.x = (e.clientX - r.left) * (canvas.width / r.width);
+  mouse.y = (e.clientY - r.top) * (canvas.height / r.height);
+});
+
+canvas.addEventListener("mousedown", ()=>{
+  mouse.clicked = true;
+});
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
+function rect(x,y,w,h){ return {x,y,w,h}; }
+function pointInRect(px,py,r){ return px>=r.x && px<=r.x+r.w && py>=r.y && py<=r.y+r.h; }
+
+function rr(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const state = {
+  started:false,
+  paused:false,
+  ended:false,
+  mode:"normal",
+
+  t:0,
+  last:0,
+  dt:0,
+
+  player:{ x: 0, y: 0, facing:{x:1,y:0}, hidden:false },
+  cam:{ x:0, y:0 },
+
+  currentRoom: "entry",
+  inventory: [],
+
+  hintLevel: 0,            // escalates per room
+  hintCooldown: 0,
+
+  attention: 0,            // 0..1
+  threat: {
+    active:false,
+    tLeft:0,
+    x:0, y:0,              // threat position (moves toward player)
+    visible:0.0            // 0..1
+  },
+
+  // puzzle remix per run
+  remix: {},
+  progress: {
+    entry_keyFound:false,
+    entry_doorUnlocked:false,
+
+    lounge_solved:false,
+
+    study_codeKnown:false,
+    study_unlocked:false,
+
+    basement_powerOn:false,
+    basement_gateKey:false,
+
+    gate_open:false
+  },
+
+  // per-room state
+  roomState: {
+    lounge: { seq: [], input: [] },
+    study: { codeInput: "" }
+  }
+};
+
+/* =========================================================
+   ROOMS (fixed layout)
+   Each room has walls + doors + objects + hideSpots
+   ========================================================= */
+const ROOMS = {
+  entry: {
+    name: "Room 1: Entry",
+    objective: () => state.progress.entry_doorUnlocked ? "Go through the unlocked door to the Lounge." : "Find a way to unlock the interior door.",
+    bounds: rect(0,0,900,560),
+    // walls are rectangles
+    walls: [
+      rect(0,0,900,30), rect(0,530,900,30), rect(0,0,30,560), rect(870,0,30,560),
+      rect(430,30,40,200), // pillar / partition
+    ],
+    doors: [
+      { id:"toLounge", to:"lounge", r: rect(870,240,30,80), locked:true, label:"Interior Door" }
+    ],
+    objects: [
+      { id:"mat", kind:"container", label:"Doormat", pos:{x:120,y:460}, desc:"A rough mat. It looks moved recently." },
+      { id:"coat", kind:"container", label:"Coat on Hook", pos:{x:160,y:140}, desc:"A heavy coat. It smells like pine and cold metal." },
+      { id:"note", kind:"note", label:"Crinkled Note", pos:{x:420,y:110}, desc:"A note pinned crookedly. Ink is fresh." },
+      { id:"lock", kind:"lock", label:"Door Lock", pos:{x:830,y:280}, desc:"A simple lock. Wants a key." }
+    ],
+    hideSpots: [
+      { id:"entryCloset", label:"Closet", r: rect(60,60,120,110) }
+    ]
+  },
+
+  lounge: {
+    name: "Room 2: Lounge",
+    objective: () => state.progress.lounge_solved ? "Door to the Study is unlocked. Proceed." : "Solve the switchboard puzzle to unlock the Study door.",
+    bounds: rect(0,0,900,560),
+    walls: [
+      rect(0,0,900,30), rect(0,530,900,30), rect(0,0,30,560), rect(870,0,30,560),
+      rect(200,300,260,30), // couch chunk
+      rect(520,140,30,230), // bookshelf
+    ],
+    doors: [
+      { id:"backEntry", to:"entry", r: rect(0,240,30,80), locked:false, label:"Back to Entry" },
+      { id:"toStudy", to:"study", r: rect(870,240,30,80), locked:true, label:"Study Door" }
+    ],
+    objects: [
+      { id:"switchboard", kind:"switchboard", label:"Switchboard", pos:{x:720,y:170}, desc:"Three levers. They feel warm. That is not right." },
+      { id:"scrap", kind:"note", label:"Scrap of Paper", pos:{x:560,y:410}, desc:"A torn scrap with a small diagram." },
+      { id:"radio", kind:"flavor", label:"Dead Radio", pos:{x:320,y:130}, desc:"The dial is stuck between stations. Static tastes like teeth." }
+    ],
+    hideSpots: [
+      { id:"underCouch", label:"Under Couch", r: rect(220,330,160,60) }
+    ]
+  },
+
+  study: {
+    name: "Room 3: Study",
+    objective: () => state.progress.study_unlocked ? "Basement hatch is unlocked. Go down." : "Find the 3-digit code and unlock the basement hatch.",
+    bounds: rect(0,0,900,560),
+    walls: [
+      rect(0,0,900,30), rect(0,530,900,30), rect(0,0,30,560), rect(870,0,30,560),
+      rect(340,110,220,30), // desk
+      rect(620,320,220,30), // cabinet
+    ],
+    doors: [
+      { id:"backLounge", to:"lounge", r: rect(0,240,30,80), locked:false, label:"Back to Lounge" },
+      { id:"toBasement", to:"basement", r: rect(760,490,90,40), locked:true, label:"Basement Hatch" }
+    ],
+    objects: [
+      { id:"ledger", kind:"clue", label:"Ledger", pos:{x:420,y:140}, desc:"A ledger. Pages dog-eared, like someone kept returning to the same lines." },
+      { id:"photo", kind:"clue", label:"Photo Frame", pos:{x:680,y:120}, desc:"A photo of the cabin. Something is scratched out." },
+      { id:"books", kind:"clue", label:"Bookshelf", pos:{x:160,y:420}, desc:"Books arranged like a habit pretending to be order." },
+      { id:"keypad", kind:"keypad", label:"Code Lock", pos:{x:800,y:505}, desc:"A 3-digit code. The metal is cold enough to hurt." }
+    ],
+    hideSpots: [
+      { id:"studyCurtain", label:"Behind Curtain", r: rect(60,60,140,140) }
+    ]
+  },
+
+  basement: {
+    name: "Room 4: Basement",
+    objective: () => state.progress.basement_powerOn ? (state.progress.gate_open ? "Gate is open. Escape outside." : "Find the gate control and open the ridge gate.") : "Restore power to wake the gate controls.",
+    bounds: rect(0,0,900,560),
+    walls: [
+      rect(0,0,900,30), rect(0,530,900,30), rect(0,0,30,560), rect(870,0,30,560),
+      rect(420,260,60,200), // support
+      rect(100,170,220,30), // table
+    ],
+    doors: [
+      { id:"backStudy", to:"study", r: rect(0,240,30,80), locked:false, label:"Up to Study" },
+      { id:"toOutside", to:"outside", r: rect(870,240,30,80), locked:true, label:"Stair Door" }
+    ],
+    objects: [
+      { id:"fusebox", kind:"container", label:"Fuse Box", pos:{x:170,y:210}, desc:"A small box with a hinged lid." },
+      { id:"breaker", kind:"breaker", label:"Breaker Panel", pos:{x:720,y:130}, desc:"A breaker panel. One slot is empty." },
+      { id:"lever", kind:"lever", label:"Gate Lever", pos:{x:720,y:410}, desc:"A lever labeled RIDGE. It is currently asleep." }
+    ],
+    hideSpots: [
+      { id:"basementShelf", label:"Behind Shelf", r: rect(620,310,160,110) }
+    ]
+  },
+
+  outside: {
+    name: "Room 5: Ridge Exit",
+    objective: () => state.progress.gate_open ? "Walk through the ridge gate to escape." : "Open the ridge gate from inside the basement.",
+    bounds: rect(0,0,900,560),
+    walls: [
+      rect(0,0,900,30), rect(0,530,900,30), rect(0,0,30,560), rect(870,0,30,560),
+      rect(220,70,460,80), // rock ridge
+      rect(100,350,260,90), // trees
+      rect(520,330,260,120), // trees
+    ],
+    doors: [
+      { id:"backBasement", to:"basement", r: rect(0,240,30,80), locked:false, label:"Back Inside" },
+      { id:"ridgeGate", to:"win", r: rect(840,250,30,120), locked:true, label:"Ridge Gate" }
+    ],
+    objects: [
+      { id:"sign", kind:"note", label:"Weathered Sign", pos:{x:440,y:480}, desc:"A sign: 'CABIN 12'. The paint is new on old wood." }
+    ],
+    hideSpots: [
+      { id:"treeShadow", label:"Tree Shadow", r: rect(110,370,120,70) }
+    ]
+  }
+};
+
+/* =========================================================
+   PUZZLE REMIX (different solution each run)
+   ========================================================= */
+function rollRemix(){
+  // Entry: key location
+  const keyLoc = Math.random() < 0.5 ? "mat" : "coat";
+
+  // Lounge: switchboard target sequence (3 levers, values A/B/C)
+  const sequences = [
+    ["A","C","B"],
+    ["B","A","C"],
+    ["C","B","A"],
+    ["A","B","C"] // easiest variant occasionally
+  ];
+  const seq = sequences[Math.floor(Math.random()*sequences.length)];
+
+  // Study: 3-digit code from three clues
+  const code = String(Math.floor(100 + Math.random()*900));
+  // Assign digits to items randomly
+  const items = ["ledger","photo","books"].sort(()=>Math.random()-0.5);
+  const map = {};
+  map[items[0]] = code[0];
+  map[items[1]] = code[1];
+  map[items[2]] = code[2];
+
+  // Basement: fuse location in fuse box OR behind shelf (still fair)
+  const fuseVariant = Math.random() < 0.75 ? "fusebox" : "hidden";
+
+  return { keyLoc, loungeSeq: seq, studyCode: code, digitMap: map, fuseVariant };
+}
+
+/* =========================================================
+   START / END / PAUSE
+   ========================================================= */
+function startGame(mode){
+  state.mode = mode;
+  state.started = true;
+  ui.startModal.style.display = "none";
+
+  // tune threat
+  if(mode==="chill"){
+    CONFIG.baseAttentionGain = CONFIG.chill.baseAttentionGain;
+    CONFIG.mistakeAttentionGain = CONFIG.chill.mistakeAttentionGain;
+    CONFIG.threatDuration = CONFIG.chill.threatDuration;
+  } else if(mode==="hard"){
+    CONFIG.baseAttentionGain = CONFIG.hard.baseAttentionGain;
+    CONFIG.mistakeAttentionGain = CONFIG.hard.mistakeAttentionGain;
+    CONFIG.threatDuration = CONFIG.hard.threatDuration;
+  }
+
+  state.remix = rollRemix();
+
+  // initialize player position
+  setRoom("entry", {x:120, y:300});
+
+  // prefill lounge state
+  state.roomState.lounge.seq = state.remix.loungeSeq.slice();
+  state.roomState.lounge.input = [];
+
+  // baseline companion
+  say("Click something obvious first. The cabin wants you to think, not to guess.", "watchful");
+  toast("Room 1 tutorial: click nearby objects. Press H if stuck.");
+
+  requestAnimationFrame(loop);
+}
+
+function endGame(title, text){
+  state.ended = true;
+  ui.endModal.style.display = "flex";
+  ui.endTitle.textContent = title;
+  ui.endText.textContent = text;
+  closeMenu();
+}
+
+function togglePause(force){
+  if(!state.started || state.ended) return;
+  state.paused = (typeof force==="boolean") ? force : !state.paused;
+  ui.pauseModal.style.display = state.paused ? "flex" : "none";
+  closeMenu();
+}
+
+/* =========================================================
+   ROOM TRANSITION + OBJECTIVE UI
+   ========================================================= */
+function setRoom(roomId, spawn){
+  state.currentRoom = roomId;
+  state.player.x = spawn.x;
+  state.player.y = spawn.y;
+  state.player.hidden = false;
+  state.hintLevel = 0;
+
+  ui.roomTitle.textContent = ROOMS[roomId].name;
+  ui.objectiveText.textContent = ROOMS[roomId].objective();
+
+  // nudge attention down slightly on room change (feels fair)
+  state.attention = clamp(state.attention - 0.08, 0, 1);
+
+  // companion reacts
+  const lines = {
+    entry: "Entry again. The air is less cold here. That’s suspicious.",
+    lounge: "Lounge. Softer furniture, sharper feeling.",
+    study: "Study. Paper. Ink. A room that records you.",
+    basement: "Basement. The house’s throat.",
+    outside: "Outside. The trees are too still."
+  };
+  say(lines[roomId] || "…", "watchful");
+}
+
+function refreshObjective(){
+  ui.objectiveText.textContent = ROOMS[state.currentRoom].objective();
+}
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+function hasItem(id){ return state.inventory.includes(id); }
+function addItem(id){
+  if(!hasItem(id)) state.inventory.push(id);
+}
+
+/* =========================================================
+   COMPANION VOICE (reactive)
+   ========================================================= */
+function say(text, mood){
+  ui.dialogueLine.textContent = text;
+  if(mood) ui.moodLabel.textContent = `mood: ${mood}`;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+let toastT = 0;
+function toast(msg, sec=1.4){
+  ui.toast.textContent = msg;
+  ui.toast.classList.add("on");
+  toastT = sec;
+}
+
+/* =========================================================
+   CONTEXT MENU (actions)
+   ========================================================= */
+let menuTarget = null;
+
+function openMenu(screenX, screenY, title, desc, actions){
+  ui.menuTitle.textContent = title;
+  ui.menuDesc.textContent = desc || "";
+  ui.menuButtons.innerHTML = "";
+
+  actions.forEach(a=>{
+    const b = document.createElement("button");
+    b.textContent = a.label;
+    b.onclick = ()=>{
+      a.onClick();
+      closeMenu();
+    };
+    ui.menuButtons.appendChild(b);
+  });
+
+  ui.menu.style.left = `${clamp(screenX, 14, canvas.width-240)}px`;
+  ui.menu.style.top  = `${clamp(screenY, 14, canvas.height-220)}px`;
+  ui.menu.classList.add("on");
+}
+function closeMenu(){
+  ui.menu.classList.remove("on");
+  menuTarget = null;
+}
+window.addEventListener("mousedown", (e)=>{
+  // click outside menu closes it (if started)
+  if(!state.started || state.paused || state.ended) return;
+  const m = ui.menu;
+  if(m.classList.contains("on")){
+    const r = m.getBoundingClientRect();
+    const cx = e.clientX, cy = e.clientY;
+    if(!(cx>=r.left && cx<=r.right && cy>=r.top && cy<=r.bottom)){
+      closeMenu();
+    }
+  }
+});
+
+/* =========================================================
+   INTERACTION: find nearest object or door
+   ========================================================= */
+function getRoom(){
+  return ROOMS[state.currentRoom];
+}
+
+function nearestInteractable(){
+  const room = getRoom();
+  const p = state.player;
+  let best = null;
+  let bestD = Infinity;
+
+  // objects
+  for(const o of room.objects){
+    if(o.hidden && !o.revealed) continue;
+    const d = dist(p.x,p.y,o.pos.x,o.pos.y);
+    if(d < bestD){
+      bestD = d;
+      best = { type:"object", o, d };
+    }
+  }
+
+  // doors
+  for(const d0 of room.doors){
+    const cx = d0.r.x + d0.r.w/2;
+    const cy = d0.r.y + d0.r.h/2;
+    const d = dist(p.x,p.y,cx,cy);
+    if(d < bestD){
+      bestD = d;
+      best = { type:"door", d0, d };
+    }
+  }
+
+  // hide spots (if close)
+  for(const hs of room.hideSpots){
+    const cx = hs.r.x + hs.r.w/2;
+    const cy = hs.r.y + hs.r.h/2;
+    const d = dist(p.x,p.y,cx,cy);
+    if(d < bestD){
+      bestD = d;
+      best = { type:"hide", hs, d };
+    }
+  }
+
+  return best && bestD <= CONFIG.interactRange ? best : null;
+}
+
+/* =========================================================
+   HIDE / UNHIDE
+   ========================================================= */
+function tryHideOrUnhide(){
+  if(state.player.hidden){
+    state.player.hidden = false;
+    toast("You step back into the open.", 1.1);
+    say("Back out. Try not to breathe too loud.", "uneasy");
+    return;
+  }
+  const hit = nearestInteractable();
+  if(hit && hit.type==="hide"){
+    state.player.hidden = true;
+    toast(`Hiding: ${hit.hs.label}`, 1.2);
+    say("Hold still. Let it forget you.", "uneasy");
+  }
+}
+
+/* =========================================================
+   CLICK: open contextual menu for nearest interactable
+   ========================================================= */
+canvas.addEventListener("click", ()=>{
+  if(!state.started || state.paused || state.ended) return;
+  if(mouse.clicked) mouse.clicked = false;
+
+  const hit = nearestInteractable();
+  if(!hit) return;
+
+  const screenX = mouse.x + 8;
+  const screenY = mouse.y + 8;
+
+  if(hit.type==="hide"){
+    const actions = [
+      { label:"Hide (Space)", onClick: ()=> tryHideOrUnhide() },
+      { label:"Examine", onClick: ()=> { say(`A place to vanish: ${hit.hs.label}.`, "watchful"); } }
+    ];
+    openMenu(screenX, screenY, hit.hs.label, "A shadow that can hold you for a moment.", actions);
+    return;
+  }
+
+  if(hit.type==="door"){
+    const door = hit.d0;
+    const locked = isDoorLocked(door);
+    const actions = [];
+
+    actions.push({
+      label:"Examine",
+      onClick: ()=>{
+        if(door.to==="win"){
+          say(locked ? "The ridge gate is shut. It feels final." : "The gate is open. Cold air invites you.", "watchful");
+        } else {
+          say(locked ? `${door.label} is locked.` : `${door.label} is open.`, "watchful");
+        }
+      }
+    });
+
+    if(!locked){
+      actions.push({
+        label:"Go Through",
+        onClick: ()=> goThroughDoor(door)
+      });
+    } else {
+      actions.push({
+        label:"Try Handle",
+        onClick: ()=>{
+          toast("Locked.", 0.9);
+          bumpAttention("locked_door");
+          say("Not yet. The cabin keeps its teeth behind locks.", "uneasy");
+        }
+      });
+    }
+
+    openMenu(screenX, screenY, door.label, locked ? "Locked." : "Unlocked.", actions);
+    return;
+  }
+
+  if(hit.type==="object"){
+    const o = hit.o;
+    const actions = buildActionsForObject(o);
+    openMenu(screenX, screenY, o.label, o.desc, actions);
+  }
+});
+
+/* =========================================================
+   DOOR LOCK LOGIC (semi-linear)
+   ========================================================= */
+function isDoorLocked(door){
+  const roomId = state.currentRoom;
+
+  // Entry -> Lounge locked until entry door unlocked
+  if(roomId==="entry" && door.id==="toLounge"){
+    return !state.progress.entry_doorUnlocked;
+  }
+
+  // Lounge -> Study locked until lounge solved
+  if(roomId==="lounge" && door.id==="toStudy"){
+    return !state.progress.lounge_solved;
+  }
+
+  // Study -> Basement locked until study unlocked
+  if(roomId==="study" && door.id==="toBasement"){
+    return !state.progress.study_unlocked;
+  }
+
+  // Basement -> Outside locked until power on
+  if(roomId==="basement" && door.id==="toOutside"){
+    return !state.progress.basement_powerOn;
+  }
+
+  // Outside ridge gate locked until opened
+  if(roomId==="outside" && door.id==="ridgeGate"){
+    return !state.progress.gate_open;
+  }
+
+  // others are not locked
+  return !!door.locked;
+}
+
+function goThroughDoor(door){
+  if(door.to==="win"){
+    endGame(
+      "You escaped.",
+      "You step into the ridge wind and suddenly understand the cabin’s trick.\n\nIt never wanted you lost. It wanted you practicing leaving."
+    );
+    return;
+  }
+
+  // spawn points per transition
+  const spawns = {
+    entry: {x:120, y:300},
+    lounge: {x:120, y:300},
+    study: {x:120, y:300},
+    basement: {x:120, y:300},
+    outside: {x:120, y:300},
+  };
+
+  setRoom(door.to, spawns[door.to] || {x:120,y:300});
+  refreshObjective();
+}
+
+/* =========================================================
+   OBJECT ACTIONS (puzzles)
+   ========================================================= */
+function buildActionsForObject(o){
+  const roomId = state.currentRoom;
+
+  const actions = [
+    { label:"Examine", onClick: ()=> examineObject(o) }
+  ];
+
+  // room-specific interactions
+  if(roomId==="entry"){
+    if(o.id==="mat"){
+      actions.push({ label:"Lift", onClick: ()=> entryLiftMat() });
+    }
+    if(o.id==="coat"){
+      actions.push({ label:"Check Pockets", onClick: ()=> entryCheckCoat() });
+    }
+    if(o.id==="note"){
+      actions.push({ label:"Read", onClick: ()=> entryReadNote() });
+    }
+    if(o.id==="lock"){
+      actions.push({ label:"Use Key", onClick: ()=> entryUseKeyOnLock() });
+    }
+  }
+
+  if(roomId==="lounge"){
+    if(o.id==="scrap"){
+      actions.push({ label:"Read", onClick: ()=> loungeReadScrap() });
+    }
+    if(o.id==="switchboard"){
+      actions.push({ label:"Flip Lever A", onClick: ()=> loungeFlip("A") });
+      actions.push({ label:"Flip Lever B", onClick: ()=> loungeFlip("B") });
+      actions.push({ label:"Flip Lever C", onClick: ()=> loungeFlip("C") });
+      actions.push({ label:"Reset", onClick: ()=> loungeReset() });
+    }
+  }
+
+  if(roomId==="study"){
+    if(["ledger","photo","books"].includes(o.id)){
+      actions.push({ label:"Search for a number", onClick: ()=> studySearchDigit(o.id) });
+    }
+    if(o.id==="keypad"){
+      actions.push({ label:"Enter Code", onClick: ()=> studyEnterCodePrompt() });
+      actions.push({ label:"Clear", onClick: ()=> { state.roomState.study.codeInput = ""; toast("Cleared.", 0.9); } });
+    }
+  }
+
+  if(roomId==="basement"){
+    if(o.id==="fusebox"){
+      actions.push({ label:"Open", onClick: ()=> basementOpenFuseBox() });
+    }
+    if(o.id==="breaker"){
+      actions.push({ label:"Insert Fuse", onClick: ()=> basementInsertFuse() });
+      actions.push({ label:"Flip Breaker", onClick: ()=> basementFlipBreaker() });
+    }
+    if(o.id==="lever"){
+      actions.push({ label:"Pull Lever", onClick: ()=> basementPullLever() });
+    }
+  }
+
+  if(roomId==="outside"){
+    if(o.id==="sign"){
+      actions.push({ label:"Read", onClick: ()=> outsideReadSign() });
+    }
+  }
+
+  return actions;
+}
+
+function examineObject(o){
+  // Companion reacts
+  const roomId = state.currentRoom;
+  const reactions = {
+    entry: "Entry objects are simple. The cabin is letting you warm up.",
+    lounge: "Patterns matter here. Press H if you feel stuck.",
+    study: "In the study, everything hides something in plain sight.",
+    basement: "Basement choices are heavier. Power feels like consent.",
+    outside: "Outside is honest. The cabin is not."
+  };
+  say(o.desc || reactions[roomId] || "…", "watchful");
+}
+
+/* ===== Entry puzzle ===== */
+function entryReadNote(){
+  const keyHint = (state.remix.keyLoc==="mat")
+    ? "Under the doormat is where people hide things they think are small."
+    : "The coat remembers pockets."
+  say(`The note reads: "Don’t panic. Start obvious. ${keyHint}"`, "calm");
+}
+
+function entryLiftMat(){
+  if(state.remix.keyLoc!=="mat"){
+    toast("Just dust. Cold dust.", 1.0);
+    bumpAttention("wasted_search");
+    say("Not there. Still a good instinct though.", "watchful");
+    return;
+  }
+  if(!state.progress.entry_keyFound){
+    state.progress.entry_keyFound = true;
+    addItem("small_key");
+    toast("Found: Small Key", 1.2);
+    say("Key. Good. Keep momentum.", "calm");
+    refreshObjective();
+  } else {
+    toast("Nothing else.", 0.9);
+  }
+}
+
+function entryCheckCoat(){
+  if(state.remix.keyLoc!=="coat"){
+    toast("A receipt. A pine needle.", 1.0);
+    bumpAttention("wasted_search");
+    say("No key. But you’re close to the way this cabin thinks.", "watchful");
+    return;
+  }
+  if(!state.progress.entry_keyFound){
+    state.progress.entry_keyFound = true;
+    addItem("small_key");
+    toast("Found: Small Key", 1.2);
+    say("Key. It wanted you to reach into something that used to be warm.", "uneasy");
+    refreshObjective();
+  } else {
+    toast("Nothing else.", 0.9);
+  }
+}
+
+function entryUseKeyOnLock(){
+  if(state.progress.entry_doorUnlocked){
+    toast("Already unlocked.", 0.9);
+    return;
+  }
+  if(!hasItem("small_key")){
+    toast("You need a key.", 1.0);
+    bumpAttention("wrong_attempt");
+    say("Lock wants a key. Find something small and metal.", "watchful");
+    return;
+  }
+  state.progress.entry_doorUnlocked = true;
+  toast("Door unlocked.", 1.2);
+  say("Good. Door yields. Don’t relax.", "watchful");
+  refreshObjective();
+}
+
+/* ===== Lounge puzzle: switch sequence ===== */
+function loungeReadScrap(){
+  // give a fair clue: shows first and last lever, middle inferred
+  const seq = state.roomState.lounge.seq;
+  say(`The scrap shows a faint diagram: "${seq[0]} … ${seq[2]}". The middle is smudged.`, "watchful");
+}
+
+function loungeFlip(letter){
+  if(state.progress.lounge_solved){
+    toast("It’s already stable.", 0.9);
+    return;
+  }
+
+  state.roomState.lounge.input.push(letter);
+
+  // cap length to 3
+  if(state.roomState.lounge.input.length > 3) state.roomState.lounge.input.shift();
+
+  const input = state.roomState.lounge.input.join("");
+  toast(`Switchboard: ${input}`, 1.0);
+
+  const target = state.roomState.lounge.seq.join("");
+  if(state.roomState.lounge.input.length === 3){
+    if(input === target){
+      state.progress.lounge_solved = true;
+      toast("Study door unlocked.", 1.3);
+      say("There. The house liked that order. Now it will let you read it.", "calm");
+      refreshObjective();
+      // reduce attention reward
+      state.attention = clamp(state.attention - 0.10, 0, 1);
+    } else {
+      toast("Wrong sequence.", 1.0);
+      bumpAttention("wrong_sequence");
+      say("No. That’s not the rhythm it wants. Reset, then try again.", "uneasy");
+    }
+  } else {
+    // small reactive line
+    if(Math.random() < 0.25) say("Keep going. Three flips total.", "watchful");
+  }
+}
+
+function loungeReset(){
+  state.roomState.lounge.input = [];
+  toast("Reset.", 0.9);
+  say("Fresh start. Use the scrap. Then trust your gut once.", "watchful");
+}
+
+/* ===== Study puzzle: 3 digits + keypad ===== */
+function studySearchDigit(itemId){
+  if(state.progress.study_codeKnown && state.progress.study_unlocked){
+    toast("You already have what you need.", 0.9);
+    return;
+  }
+  const d = state.remix.digitMap[itemId];
+  toast(`You find a scratched digit: ${d}`, 1.2);
+
+  // store known digits
+  state.progress.study_codeKnown = true;
+  state.progress._digits = state.progress._digits || {};
+  state.progress._digits[itemId] = d;
+
+  const knownCount = Object.keys(state.progress._digits).length;
+
+  if(knownCount === 1){
+    say("One digit. Two to go. The code will feel obvious when the last one clicks.", "watchful");
+  } else if(knownCount === 2){
+    say("Two digits. One more. Then you stop guessing and start knowing.", "calm");
+  } else {
+    say("All three digits. Don’t overthink the order. Look for a pattern.", "helpful");
+  }
+}
+
+function studyEnterCodePrompt(){
+  const haveAll = state.progress._digits && Object.keys(state.progress._digits).length === 3;
+  if(!haveAll){
+    toast("You are missing digits.", 1.1);
+    bumpAttention("premature_keypad");
+    say("Not yet. Find the digits first. Ledger, photo, bookshelf.", "watchful");
+    return;
+  }
+
+  // order hint: we embed a gentle rule in the ledger
+  // We keep it fair: order is ledger -> photo -> books (constant rule)
+  const codeGuess = prompt("Enter 3-digit code (hint: order matches the room's 'story': Ledger -> Photo -> Books):", "");
+  if(codeGuess === null) return;
+
+  const target = state.remix.studyCode;
+  if(codeGuess.trim() === target){
+    state.progress.study_unlocked = true;
+    toast("Basement hatch unlocked.", 1.3);
+    say("Good. Down. The house keeps its real voice in the basement.", "uneasy");
+    refreshObjective();
+    state.attention = clamp(state.attention - 0.08, 0, 1);
+  } else {
+    toast("Wrong code.", 1.0);
+    bumpAttention("wrong_code");
+    say("No. Try again, but stop guessing. Re-check the order rule.", "uneasy");
+  }
+}
+
+/* ===== Basement puzzle: fuse + breaker + lever ===== */
+function basementOpenFuseBox(){
+  // fuse may be here or hidden behind shelf (we model by giving fuse after open, or after examine hide spot)
+  if(hasItem("fuse")){
+    toast("Empty box.", 0.9);
+    say("You already took what mattered.", "watchful");
+    return;
+  }
+
+  if(state.remix.fuseVariant === "fusebox"){
+    addItem("fuse");
+    toast("Found: Fuse", 1.2);
+    say("Fuse. That’s a yes from the house. Use it at the breaker.", "watchful");
+  } else {
+    toast("Just dust and a dead spider.", 1.0);
+    bumpAttention("wasted_search");
+    say("Not here. Try another hiding place. Shelves like secrets.", "watchful");
+  }
+}
+
+function basementInsertFuse(){
+  if(state.progress.basement_powerOn){
+    toast("Already powered.", 0.9);
+    return;
+  }
+  if(!hasItem("fuse")){
+    // if fuse is hidden variant, allow it to be found via hiding spot examine
+    toast("Missing fuse.", 1.0);
+    bumpAttention("wrong_attempt");
+    say("Need a fuse. Check the fuse box, then the places people hide from themselves.", "uneasy");
+    return;
+  }
+  state.progress._fuseInserted = true;
+  toast("Fuse inserted.", 1.1);
+  say("Good. Now flip the breaker. Quick.", "uneasy");
+}
+
+function basementFlipBreaker(){
+  if(state.progress.basement_powerOn){
+    toast("Already on.", 0.9);
+    return;
+  }
+  if(!state.progress._fuseInserted){
+    toast("A slot is empty.", 1.0);
+    bumpAttention("wrong_attempt");
+    say("You can flip it all day. Without the fuse, it stays a gesture.", "watchful");
+    return;
+  }
+  state.progress.basement_powerOn = true;
+  toast("Power restored.", 1.2);
+  say("There. The hum. The cabin just got… more awake.", "uneasy");
+  refreshObjective();
+  state.attention = clamp(state.attention - 0.06, 0, 1);
+}
+
+function basementPullLever(){
+  if(!state.progress.basement_powerOn){
+    toast("Dead lever.", 1.0);
+    bumpAttention("wrong_attempt");
+    say("No power. No obedience. Fix the breaker first.", "watchful");
+    return;
+  }
+  state.progress.gate_open = true;
+  toast("Ridge gate opened.", 1.3);
+  say("Go. Now. Before it notices you understood.", "helpful");
+  refreshObjective();
+}
+
+/* ===== Outside flavor ===== */
+function outsideReadSign(){
+  const s = [
+    "CABIN 12. Someone repainted the letters recently.",
+    "CABIN 12. The wood looks old. The paint looks wet.",
+    "CABIN 12. You feel like you are reading your own name."
+  ];
+  say(s[Math.floor(Math.random()*s.length)], "uneasy");
+}
+
+/* =========================================================
+   ATTENTION + THREAT SYSTEM
+   Mistakes raise attention. Lingering raises attention.
+   If attention crosses threshold, threat appears occasionally.
+   You can survive by hiding or rerouting rooms.
+   ========================================================= */
+function bumpAttention(why){
+  state.attention = clamp(state.attention + CONFIG.mistakeAttentionGain, 0, 1);
+  if(Math.random()<0.35){
+    const lines = {
+      wrong_attempt: "Careful. Wrong moves don’t hurt you. They invite attention.",
+      wrong_sequence: "It heard that. Do it cleaner.",
+      wrong_code: "The lock didn’t fail. It judged.",
+      locked_door: "Don’t yank on doors. That’s how it learns your impatience.",
+      wasted_search: "Searching is fine. But don’t spiral."
+    };
+    say(lines[why] || "It noticed.", "uneasy");
+  }
+}
+
+function maybeTriggerThreat(){
+  if(state.threat.active) return;
+  if(state.attention < CONFIG.threatTriggerAt) return;
+
+  // not always, occasional pressure
+  if(Math.random() < 0.35){
+    state.threat.active = true;
+    state.threat.tLeft = CONFIG.threatDuration;
+    state.threat.visible = 0.0;
+
+    // spawn near a wall edge in current room
+    const r = getRoom().bounds;
+    const edges = [
+      {x: r.x + 60, y: r.y + 60},
+      {x: r.x + r.w - 60, y: r.y + 60},
+      {x: r.x + 60, y: r.y + r.h - 60},
+      {x: r.x + r.w - 60, y: r.y + r.h - 60}
+    ];
+    const s = edges[Math.floor(Math.random()*edges.length)];
+    state.threat.x = s.x;
+    state.threat.y = s.y;
+
+    toast("Something is here.", 1.2);
+    say("Shhh. Hide or move. Don’t stare at it.", "uneasy");
+  }
+}
+
+function updateThreat(dt){
+  // passive attention
+  state.attention = clamp(state.attention + CONFIG.baseAttentionGain * dt, 0, 1);
+
+  // UI bars
+  ui.pressureBar.style.width = `${Math.round(state.attention*100)}%`;
+  ui.threatBar.style.width = `${state.threat.active ? Math.round((state.threat.tLeft/CONFIG.threatDuration)*100) : 0}%`;
+
+  if(!state.threat.active){
+    maybeTriggerThreat();
+    return;
+  }
+
+  state.threat.tLeft -= dt;
+  state.threat.visible = clamp(state.threat.visible + dt*0.9, 0, 1);
+
+  // move threat slowly toward player
+  const p = state.player;
+  const dx = p.x - state.threat.x;
+  const dy = p.y - state.threat.y;
+  const d = Math.hypot(dx,dy) || 1;
+
+  const speed = 52; // slow
+  state.threat.x += (dx/d) * speed * dt;
+  state.threat.y += (dy/d) * speed * dt;
+
+  // catch check
+  if(!p.hidden){
+    const cd = Math.hypot(p.x - state.threat.x, p.y - state.threat.y);
+    if(cd < CONFIG.threatCatchDist){
+      suddenDeath();
+      return;
+    }
+  }
+
+  if(state.threat.tLeft <= 0){
+    state.threat.active = false;
+    state.threat.visible = 0;
+    // attention drops slightly after surviving
+    state.attention = clamp(state.attention - 0.22, 0, 1);
+    toast("It left.", 1.0);
+    say("Good. It forgot you for now. Don’t waste the quiet.", "watchful");
+  }
+}
+
+function suddenDeath(){
+  state.ended = true;
+  // sudden blackout feel
+  endGame("Caught.", "A shape fills the room. Everything cuts to black.\n\nYou do not remember falling. You only remember being seen.");
+}
+
+/* =========================================================
+   HINT SYSTEM (H key, escalates per room)
+   ========================================================= */
+function requestHint(){
+  if(state.hintCooldown > 0) return;
+  state.hintCooldown = 0.55;
+  const roomId = state.currentRoom;
+  const lvl = state.hintLevel;
+  state.hintLevel = Math.min(2, state.hintLevel + 1);
+
+  const hint = getHint(roomId, lvl);
+  toast("Hint", 0.8);
+  say(hint.text, hint.mood || "helpful");
+
+  // using hints lowers attention slightly (feels fair)
+  state.attention = clamp(state.attention - 0.06, 0, 1);
+}
+
+function getHint(roomId, lvl){
+  const r = state.remix;
+
+  if(roomId==="entry"){
+    if(lvl===0) return { text:"Start with the obvious: the doormat and the coat. One of them hides the key.", mood:"calm" };
+    if(lvl===1) return { text:`Try the ${r.keyLoc === "mat" ? "doormat" : "coat"} again, but do the specific action (Lift / Check Pockets).`, mood:"helpful" };
+    return { text:"Get the Small Key, then use it on the Door Lock object by the interior door.", mood:"helpful" };
+  }
+
+  if(roomId==="lounge"){
+    const seq = state.roomState.lounge.seq;
+    if(lvl===0) return { text:"The switchboard wants exactly 3 flips. Use the scrap for the first and last lever.", mood:"watchful" };
+    if(lvl===1) return { text:`Try this order: ${seq[0]}, then ${seq[1]}, then ${seq[2]}.`, mood:"helpful" };
+    return { text:"Flip the levers in the correct 3-step order, then the Study door unlocks.", mood:"helpful" };
+  }
+
+  if(roomId==="study"){
+    if(lvl===0) return { text:"Three objects hide three digits: Ledger, Photo Frame, Bookshelf.", mood:"watchful" };
+    if(lvl===1) return { text:"Search each for a number, then enter the code with order: Ledger → Photo → Books.", mood:"helpful" };
+    return { text:`The code this run is ${r.studyCode}. Enter it on the Code Lock to unlock the hatch.`, mood:"helpful" };
+  }
+
+  if(roomId==="basement"){
+    if(lvl===0) return { text:"Power first: you need a fuse, then insert it, then flip the breaker.", mood:"watchful" };
+    if(lvl===1){
+      return { text: (r.fuseVariant==="fusebox") ? "Open the Fuse Box to get the fuse." : "Fuse is not in the Fuse Box this run. Try hiding spots or shelves nearby.", mood:"helpful" };
+    }
+    return { text:"Once power is on, pull the Gate Lever to open the ridge gate.", mood:"helpful" };
+  }
+
+  if(roomId==="outside"){
+    if(lvl===0) return { text:"If the gate is closed, you still need to open it from the basement lever.", mood:"watchful" };
+    if(lvl===1) return { text:"Go back inside, restore power, then pull the Gate Lever.", mood:"helpful" };
+    return { text:"When the ridge gate unlocks, walk to it and go through.", mood:"helpful" };
+  }
+
+  return { text:"Look for something you can interact with near the door.", mood:"helpful" };
+}
+
+/* =========================================================
+   MOVE + COLLISION
+   ========================================================= */
+function circleRectCollide(cx,cy,cr, r){
+  const nx = clamp(cx, r.x, r.x+r.w);
+  const ny = clamp(cy, r.y, r.y+r.h);
+  const dx = cx - nx;
+  const dy = cy - ny;
+  return (dx*dx + dy*dy) < (cr*cr);
+}
+
+function getSolidsForRoom(room){
+  const solids = room.walls.slice();
+  // closed doors are solids
+  for(const d of room.doors){
+    if(isDoorLocked(d)){
+      solids.push(d.r);
+    }
+  }
+  // add a hidden fuse variant: allow finding fuse by examining a hide spot in basement
+  // we keep this fair by allowing "Hide" to also reveal something once
+  return solids;
+}
+
+function movePlayer(dt){
+  const p = state.player;
+  if(p.hidden) return;
+
+  let ix=0, iy=0;
+  if(keys.has("w") || keys.has("arrowup")) iy -= 1;
+  if(keys.has("s") || keys.has("arrowdown")) iy += 1;
+  if(keys.has("a") || keys.has("arrowleft")) ix -= 1;
+  if(keys.has("d") || keys.has("arrowright")) ix += 1;
+
+  const mag = Math.hypot(ix,iy) || 1;
+  ix/=mag; iy/=mag;
+
+  if(Math.hypot(ix,iy) > 0.2){
+    p.facing.x = ix; p.facing.y = iy;
+  }
+
+  const sprint = keys.has("shift");
+  const speed = CONFIG.playerSpeed * (sprint ? CONFIG.sprintMult : 1);
+
+  const vx = ix * speed;
+  const vy = iy * speed;
+
+  const room = getRoom();
+  const solids = getSolidsForRoom(room);
+
+  // x axis
+  let nx = p.x + vx*dt;
+  let ny = p.y;
+
+  for(const r of solids){
+    if(circleRectCollide(nx, ny, CONFIG.playerR, r)){ nx = p.x; break; }
+  }
+  p.x = clamp(nx, 40, room.bounds.w-40);
+
+  // y axis
+  nx = p.x;
+  ny = p.y + vy*dt;
+  for(const r of solids){
+    if(circleRectCollide(nx, ny, CONFIG.playerR, r)){ ny = p.y; break; }
+  }
+  p.y = clamp(ny, 40, room.bounds.h-40);
+}
+
+/* =========================================================
+   DRAW
+   ========================================================= */
+function draw(){
+  const room = getRoom();
+  const p = state.player;
+
+  // camera (room is screen-sized, but keep slight smoothing anyway)
+  const targetCamX = 0;
+  const targetCamY = 0;
+  state.cam.x += (targetCamX - state.cam.x) * CONFIG.cameraLerp;
+  state.cam.y += (targetCamY - state.cam.y) * CONFIG.cameraLerp;
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // scale room to fit canvas (room is 900x560)
+  const scale = Math.min(canvas.width/room.bounds.w, canvas.height/room.bounds.h);
+  const ox = (canvas.width - room.bounds.w*scale)/2;
+  const oy = (canvas.height - room.bounds.h*scale)/2;
+
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.scale(scale, scale);
+
+  // floor gradient by room
+  const roomTone = {
+    entry: ["#0b1211","#08100f"],
+    lounge:["#0c1513","#08100f"],
+    study: ["#0c1313","#070b0c"],
+    basement:["#0a0d0e","#050708"],
+    outside:["#091010","#050607"]
+  }[state.currentRoom] || ["#0b1211","#08100f"];
+
+  const g = ctx.createLinearGradient(0,0,0,room.bounds.h);
+  g.addColorStop(0, roomTone[0]);
+  g.addColorStop(1, roomTone[1]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,room.bounds.w,room.bounds.h);
+
+  // subtle texture
+  for(let y=0;y<room.bounds.h;y+=70){
+    for(let x=0;x<room.bounds.w;x+=70){
+      const v = (x*73856093 ^ y*19349663) & 255;
+      ctx.fillStyle = `rgba(185,215,200,${0.02 + (v/255)*0.02})`;
+      ctx.fillRect(x+10,y+10,50,45);
+    }
+  }
+
+  // outside room gets trees vibe
+  if(state.currentRoom==="outside"){
+    ctx.fillStyle = "rgba(19,33,28,0.65)";
+    ctx.fillRect(0,0,room.bounds.w,room.bounds.h);
+  }
+
+  // walls
+  for(const w of room.walls){
+    ctx.fillStyle = "rgba(18,28,26,1)";
+    ctx.fillRect(w.x,w.y,w.w,w.h);
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    ctx.fillRect(w.x,w.y,w.w,2);
+  }
+
+  // doors
+  for(const d of room.doors){
+    const locked = isDoorLocked(d);
+    ctx.fillStyle = locked ? "rgba(54,38,28,1)" : "rgba(0,0,0,0.28)";
+    ctx.fillRect(d.r.x, d.r.y, d.r.w, d.r.h);
+    if(locked){
+      ctx.fillStyle = "rgba(255,255,255,0.07)";
+      ctx.fillRect(d.r.x+2, d.r.y+2, Math.max(2,d.r.w-4), 2);
+    }
+  }
+
+  // hide spots hint zones (very subtle)
+  for(const hs of room.hideSpots){
+    ctx.fillStyle = "rgba(255,255,255,0.02)";
+    ctx.fillRect(hs.r.x, hs.r.y, hs.r.w, hs.r.h);
+  }
+
+  // objects (with glow if near)
+  const hit = nearestInteractable();
+
+  for(const o of room.objects){
+    if(o.hidden && !o.revealed) continue;
+
+    const d = dist(p.x,p.y,o.pos.x,o.pos.y);
+    const near = d < CONFIG.interactRange;
+
+    // base icon
+    drawObjectIcon(o, near);
+
+    // glow ring if interactable and near
+    if(near && (!hit || (hit.type==="object" && hit.o.id===o.id))){
+      ctx.strokeStyle = "rgba(185,215,200,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(o.pos.x, o.pos.y, 18, 0, Math.PI*2);
+      ctx.stroke();
+
+      // label
+      drawLabel(o.label, o.pos.x, o.pos.y - 22);
+    }
+  }
+
+  // player
+  if(!p.hidden){
+    ctx.fillStyle = "rgba(231,239,233,0.92)";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,CONFIG.playerR,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(0,0,0,0.24)";
+    ctx.beginPath();
+    ctx.arc(p.x + p.facing.x*8, p.y + p.facing.y*8, 4, 0, Math.PI*2);
+    ctx.fill();
+  } else {
+    // hidden indicator
+    ctx.fillStyle = "rgba(185,215,200,0.18)";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,6,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // threat (mix between partially visible and visible)
+  if(state.threat.active){
+    const v = state.threat.visible;
+    const alpha = 0.10 + 0.55*v;
+
+    // silhouette body
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(state.threat.x, state.threat.y, 18, 34, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // faint edge sheen
+    ctx.strokeStyle = `rgba(255,217,163,${0.05 + 0.12*v})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(state.threat.x, state.threat.y, 18, 34, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    // eyes sometimes
+    if(v > 0.55){
+      ctx.fillStyle = `rgba(255,217,163,${0.06 + 0.18*v})`;
+      ctx.beginPath(); ctx.arc(state.threat.x-6, state.threat.y-8, 2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(state.threat.x+6, state.threat.y-8, 2, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  ctx.restore();
+
+  // lighting overlay (screen-space)
+  drawFogLight(ox,oy,scale);
+
+  // update objective (cheap but safe)
+  ui.roomTitle.textContent = room.name;
+  ui.objectiveText.textContent = room.objective();
+
+  // threat UI
+  ui.pressureBar.style.width = `${Math.round(state.attention*100)}%`;
+  ui.threatBar.style.width = `${state.threat.active ? Math.round((state.threat.tLeft/CONFIG.threatDuration)*100) : 0}%`;
+}
+
+function drawObjectIcon(o, near){
+  const col = near ? "rgba(255,217,163,0.30)" : "rgba(255,255,255,0.12)";
+  ctx.fillStyle = col;
+
+  if(o.kind==="note"){
+    ctx.fillRect(o.pos.x-10,o.pos.y-12,20,24);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(o.pos.x-8,o.pos.y-7,16,2);
+    ctx.fillRect(o.pos.x-8,o.pos.y-2,12,2);
+  } else if(o.kind==="container"){
+    ctx.fillRect(o.pos.x-12,o.pos.y-10,24,20);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(o.pos.x-10,o.pos.y,20,2);
+  } else if(o.kind==="switchboard"){
+    ctx.fillRect(o.pos.x-14,o.pos.y-14,28,28);
+    const on = state.roomState.lounge.input.length;
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(o.pos.x-10,o.pos.y-4,20,2);
+    ctx.fillRect(o.pos.x-10,o.pos.y+2,20,2);
+    ctx.fillRect(o.pos.x-10,o.pos.y+8,20,2);
+  } else if(o.kind==="keypad"){
+    ctx.fillRect(o.pos.x-12,o.pos.y-12,24,24);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(o.pos.x-8,o.pos.y-8,16,6);
+    ctx.fillRect(o.pos.x-8,o.pos.y+2,6,6);
+    ctx.fillRect(o.pos.x,  o.pos.y+2,6,6);
+  } else if(o.kind==="breaker"){
+    ctx.fillRect(o.pos.x-14,o.pos.y-12,28,24);
+    ctx.fillStyle = state.progress.basement_powerOn ? "rgba(185,242,194,0.55)" : "rgba(230,167,167,0.35)";
+    ctx.fillRect(o.pos.x-12,o.pos.y+8,24,3);
+  } else if(o.kind==="lever"){
+    ctx.fillRect(o.pos.x-12,o.pos.y-12,24,24);
+    ctx.fillStyle = state.progress.basement_powerOn ? "rgba(255,217,163,0.35)" : "rgba(255,255,255,0.10)";
+    ctx.fillRect(o.pos.x-2,o.pos.y-10,4,20);
+  } else if(o.kind==="clue"){
+    ctx.fillRect(o.pos.x-12,o.pos.y-12,24,24);
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.fillRect(o.pos.x-10,o.pos.y+2,20,2);
+  } else {
+    ctx.beginPath();
+    ctx.arc(o.pos.x,o.pos.y,12,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function drawLabel(text, x, y){
+  ctx.save();
+  ctx.font = "12px ui-sans-serif, system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const padX = 8;
+  const w = ctx.measureText(text).width + padX*2;
+  const h = 18;
+  ctx.fillStyle = "rgba(9,12,12,0.75)";
+  rr(ctx, x - w/2, y - h/2, w, h, 10);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.stroke();
+  ctx.fillStyle = "rgba(231,239,233,0.92)";
+  ctx.fillText(text, x, y+1);
+  ctx.restore();
+}
+
+function drawFogLight(ox, oy, scale){
+  // base fog
+  ctx.save();
+  ctx.fillStyle = `rgba(8,10,11,${CONFIG.fogAlpha})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // carve player lantern
+  ctx.globalCompositeOperation = "destination-out";
+
+  const p = state.player;
+  const px = ox + p.x*scale;
+  const py = oy + p.y*scale;
+
+  const r = CONFIG.lightRadius;
+  const grad = ctx.createRadialGradient(px, py, r*0.10, px, py, r);
+  grad.addColorStop(0, "rgba(0,0,0,0.95)");
+  grad.addColorStop(CONFIG.lightSoftness, "rgba(0,0,0,0.22)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+
+  // if hidden, smaller light (more tense)
+  const rr2 = state.player.hidden ? r*0.65 : r;
+  const g2 = ctx.createRadialGradient(px, py, rr2*0.10, px, py, rr2);
+  g2.addColorStop(0, "rgba(0,0,0,0.95)");
+  g2.addColorStop(CONFIG.lightSoftness, "rgba(0,0,0,0.25)");
+  g2.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g2;
+
+  ctx.beginPath();
+  ctx.arc(px, py, rr2, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.globalCompositeOperation = "source-over";
+
+  // vignette
+  const vig = ctx.createRadialGradient(canvas.width/2, canvas.height/2, Math.min(canvas.width,canvas.height)*0.28,
+                                       canvas.width/2, canvas.height/2, Math.max(canvas.width,canvas.height)*0.75);
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.restore();
+}
+
+/* =========================================================
+   SPECIAL: hidden fuse variant revealed by examining basement hide spot
+   ========================================================= */
+function revealHiddenFuseIfNeeded(){
+  if(state.currentRoom !== "basement") return;
+  if(state.remix.fuseVariant !== "hidden") return;
+  if(hasItem("fuse")) return;
+
+  // If player interacts with the basement shelf hide spot at least once, give fuse
+  addItem("fuse");
+  toast("You find a fuse wedged behind the shelf.", 1.4);
+  say("There. People hide power like they hide shame.", "uneasy");
+}
+
+/* Hook: opening menu for hide spot in basement can reveal fuse */
+const originalOpenMenu = openMenu;
+openMenu = function(screenX, screenY, title, desc, actions){
+  // if basement + hide spot menu, reveal fuse variant as a fair surprise
+  if(state.currentRoom==="basement" && title && title.toLowerCase().includes("shelf")){
+    // reveal once
+    if(state.remix.fuseVariant==="hidden" && !hasItem("fuse")){
+      // do it after a tiny delay so it feels like a find
+      setTimeout(revealHiddenFuseIfNeeded, 50);
+    }
+  }
+  return originalOpenMenu(screenX, screenY, title, desc, actions);
+}
+
+/* =========================================================
+   LOOP
+   ========================================================= */
+function loop(ts){
+  if(!state.started) return;
+  if(!state.last) state.last = ts;
+  const rawDt = (ts - state.last) / 1000;
+  state.last = ts;
+  state.dt = Math.min(0.033, rawDt);
+
+  if(!state.paused && !state.ended){
+    state.t += state.dt;
+
+    // cooldowns
+    if(state.hintCooldown > 0) state.hintCooldown -= state.dt;
+    if(toastT > 0){
+      toastT -= state.dt;
+      if(toastT <= 0) ui.toast.classList.remove("on");
+    }
+
+    // update
+    movePlayer(state.dt);
+    updateThreat(state.dt);
+
+    // if outside and gate open, unlock ridge gate door
+    if(state.currentRoom==="outside"){
+      // the ridge gate is a door to "win", locked depends on gate_open
+    }
+
+    // auto unlock basement stair door if power is on
+    if(state.currentRoom==="basement"){
+      // door lock logic handles it
+    }
+
+    // if player stands in a door area and clicks nothing, we do nothing (keeps it hybrid)
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   Misc: click closes menu if started and menu open, already handled
+   Pause handling
+   ========================================================= */
+window.addEventListener("keydown", (e)=>{
+  if(e.key.toLowerCase()==="escape") closeMenu();
+});
+
+/* Start safety: if user clicks canvas before buttons */
+canvas.addEventListener("dblclick", ()=>{
+  if(!state.started) startGame("normal");
+});
+</script>
+</body>
+</html>

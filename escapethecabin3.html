@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cabin Escape Room (Working Door)</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#121b2e;
+      --ink:#e8f0ff;
+      --muted:#a8b6d8;
+      --good:#2ee59d;
+      --warn:#ffcc66;
+      --bad:#ff6b6b;
+      --accent:#7aa7ff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, #22345d 0%, var(--bg) 55%, #060a14 100%);
+      color:var(--ink);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:18px;
+    }
+    .wrap{
+      width:min(980px, 96vw);
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:16px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    .gameHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+    }
+    .title{
+      display:flex; gap:10px; align-items:center;
+      font-weight:750;
+      letter-spacing:.2px;
+    }
+    .pill{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.12);
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(0,0,0,.25);
+    }
+    canvas{
+      display:block;
+      width:100%;
+      height:auto;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    }
+    .side{
+      padding:14px;
+    }
+    .side h3{
+      margin:0 0 10px;
+      font-size:14px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:.35px;
+      text-transform:uppercase;
+    }
+    .statRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .stat{
+      flex:1;
+      min-width:130px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:10px;
+    }
+    .stat .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .stat .value{
+      font-size:15px;
+      font-weight:750;
+    }
+    .inv{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-radius:14px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      margin-bottom:12px;
+    }
+    .inv .slot{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px dashed rgba(255,255,255,.25);
+      display:grid;
+      place-items:center;
+      font-size:20px;
+      color:rgba(255,255,255,.75);
+      background: rgba(255,255,255,.04);
+    }
+    .inv .txt{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+    .inv .txt .big{
+      font-weight:750;
+    }
+    .inv .txt .small{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .controls{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.45;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:10px;
+      margin-bottom:12px;
+    }
+    .controls kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color:var(--ink);
+    }
+    .log{
+      height:230px;
+      overflow:auto;
+      padding:10px;
+      border-radius:14px;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .msg{ margin:0 0 8px; }
+    .msg b{ color:var(--accent); }
+    .msg.good b{ color:var(--good); }
+    .msg.warn b{ color:var(--warn); }
+    .msg.bad b{ color:var(--bad); }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+    }
+    button{
+      flex:1;
+      cursor:pointer;
+      border-radius:14px;
+      padding:10px 12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--ink);
+      font-weight:750;
+    }
+    button:hover{ background: rgba(255,255,255,.10); }
+    button:active{ transform: translateY(1px); }
+
+    @media (max-width: 880px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="gameHeader">
+        <div class="title">🏕️ Cabin Escape Room <span class="pill" id="roomPill">Room 1</span></div>
+        <div class="pill">Interact: <b>E</b> • Move: <b>WASD</b>/<b>Arrows</b></div>
+      </div>
+      <canvas id="c" width="720" height="420"></canvas>
+    </div>
+
+    <div class="card side">
+      <h3>Status</h3>
+
+      <div class="statRow">
+        <div class="stat">
+          <div class="label">Door</div>
+          <div class="value" id="doorState">Locked 🔒</div>
+        </div>
+        <div class="stat">
+          <div class="label">Objective</div>
+          <div class="value" id="objective">Find the key</div>
+        </div>
+      </div>
+
+      <div class="inv">
+        <div class="slot" id="invSlot">—</div>
+        <div class="txt">
+          <div class="big">Inventory</div>
+          <div class="small" id="invText">Empty</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> to move</div>
+        <div><kbd>E</kbd> to interact when near something</div>
+        <div><kbd>R</kbd> to restart</div>
+      </div>
+
+      <h3>Log</h3>
+      <div class="log" id="log"></div>
+
+      <div class="btnRow">
+        <button id="restartBtn">Restart</button>
+        <button id="hintBtn">Hint</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== Canvas / Rendering =====
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+
+  // ===== UI =====
+  const logEl = document.getElementById("log");
+  const invSlot = document.getElementById("invSlot");
+  const invText = document.getElementById("invText");
+  const doorStateEl = document.getElementById("doorState");
+  const objectiveEl = document.getElementById("objective");
+  const roomPill = document.getElementById("roomPill");
+
+  function log(type, title, text){
+    const p = document.createElement("p");
+    p.className = `msg ${type||""}`;
+    p.innerHTML = `<b>${title}:</b> ${text}`;
+    logEl.prepend(p);
+  }
+
+  // ===== Game State =====
+  const STATE = {
+    room: 1,
+    hasKey: false,
+    doorUnlocked: false,
+    won: false,
+  };
+
+  // Bright, visible object palette (no “why is everything so dark”)
+  const COLORS = {
+    floor: "rgba(255,255,255,0.06)",
+    wall: "rgba(255,255,255,0.18)",
+    player: "#EAF2FF",
+    playerGlow: "rgba(122,167,255,0.25)",
+    key: "#2ee59d",
+    keyGlow: "rgba(46,229,157,0.35)",
+    doorLocked: "#ff6b6b",
+    doorUnlocked: "#2ee59d",
+    doorFrame: "rgba(255,255,255,0.25)",
+    sign: "rgba(255,255,255,0.75)",
+    monster: "#ffcc66",
+  };
+
+  // Simple world layout: walls are rectangles (colliders)
+  // Door is a special "portal rectangle" on the right wall.
+  const WORLD = {
+    w: canvas.width,
+    h: canvas.height,
+
+    // Room 1 objects
+    room1: {
+      walls: [
+        {x: 20, y: 20, w: 680, h: 18},
+        {x: 20, y: 382, w: 680, h: 18},
+        {x: 20, y: 20, w: 18, h: 380},
+        {x: 682, y: 20, w: 18, h: 380},
+        // a table-ish obstacle
+        {x: 220, y: 170, w: 280, h: 70},
+      ],
+      key: {x: 270, y: 135, w: 18, h: 12, taken:false},
+      door: {x: 682, y: 180, w: 18, h: 70}, // right wall portal
+      sign: {x: 60, y: 60, w: 170, h: 26, text:"Find the key. Unlock the door."}
+    },
+
+    // Room 2 objects (celebration area)
+    room2: {
+      walls: [
+        {x: 20, y: 20, w: 680, h: 18},
+        {x: 20, y: 382, w: 680, h: 18},
+        {x: 20, y: 20, w: 18, h: 380},
+        {x: 682, y: 20, w: 18, h: 380},
+        {x: 120, y: 250, w: 480, h: 18},
+      ],
+      exit: {x: 340, y: 70, w: 40, h: 40}, // stand on this to win
+      sign: {x: 60, y: 60, w: 240, h: 26, text:"Step on the glowing square to finish."}
+    }
+  };
+
+  const player = {
+    x: 90, y: 300,
+    r: 12,
+    speed: 2.5,
+    vx: 0, vy: 0
+  };
+
+  // ===== Input =====
+  const keysDown = new Set();
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    keysDown.add(k);
+    if (k === "e") tryInteract();
+    if (k === "r") reset();
+  });
+  window.addEventListener("keyup", (e) => keysDown.delete(e.key.toLowerCase()));
+
+  document.getElementById("restartBtn").addEventListener("click", reset);
+  document.getElementById("hintBtn").addEventListener("click", () => {
+    if (STATE.room === 1 && !STATE.hasKey){
+      log("warn","Hint","The key is tucked near the table. Walk close and press <b>E</b>.");
+    } else if (STATE.room === 1 && STATE.hasKey && !STATE.doorUnlocked){
+      log("warn","Hint","Go to the right-side door and press <b>E</b> to unlock it.");
+    } else if (STATE.room === 1 && STATE.doorUnlocked){
+      log("warn","Hint","Walk into the doorway. It will transition you to the next room.");
+    } else {
+      log("warn","Hint","In Room 2, step on the glowing square to finish.");
+    }
+  });
+
+  // ===== Collision Helpers =====
+  function circleRectCollides(cx, cy, r, rect){
+    const closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+    const closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+    const dx = cx - closestX;
+    const dy = cy - closestY;
+    return (dx*dx + dy*dy) <= r*r;
+  }
+
+  function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
+
+  function moveAndCollide(nx, ny, walls){
+    // Try x move
+    let tx = nx, ty = player.y;
+    for (const w of walls){
+      if (circleRectCollides(tx, ty, player.r, w)){
+        tx = player.x; break;
+      }
+    }
+    // Try y move
+    ty = ny;
+    for (const w of walls){
+      if (circleRectCollides(tx, ty, player.r, w)){
+        ty = player.y; break;
+      }
+    }
+    player.x = tx; player.y = ty;
+  }
+
+  function distToRectCenter(px, py, rect){
+    const cx = rect.x + rect.w/2;
+    const cy = rect.y + rect.h/2;
+    const dx = px - cx;
+    const dy = py - cy;
+    return Math.hypot(dx, dy);
+  }
+
+  // ===== Core Door Logic (the part that usually breaks) =====
+  // 1) "Unlock" is a state: doorUnlocked=true
+  // 2) "Pass through" is a transition: if doorUnlocked && colliding with door => next room
+  // We do BOTH cleanly so you never get the "unlocked but can't go through" bug.
+  function checkDoorPortal(){
+    if (STATE.room !== 1) return;
+    const door = WORLD.room1.door;
+
+    const touchingDoor = circleRectCollides(player.x, player.y, player.r, door);
+
+    if (touchingDoor && STATE.doorUnlocked){
+      // Transition: snap player into next room safely
+      STATE.room = 2;
+      roomPill.textContent = "Room 2";
+      objectiveEl.textContent = "Finish the escape";
+      log("good","Door","You step through the doorway into the next room ✨");
+      // Place player away from wall in room 2
+      player.x = 80; player.y = 320;
+    } else if (touchingDoor && !STATE.doorUnlocked){
+      // If they ram the door without unlocking, give feedback
+      // (No fail state)
+      log("bad","Door","Locked. You need a key.");
+    }
+  }
+
+  // ===== Interactions =====
+  function tryInteract(){
+    if (STATE.won) return;
+
+    if (STATE.room === 1){
+      const {key, door, sign} = WORLD.room1;
+
+      // Sign interaction
+      if (distToRectCenter(player.x, player.y, sign) < 70){
+        log("","Note", sign.text);
+        return;
+      }
+
+      // Key pickup
+      if (!key.taken && distToRectCenter(player.x, player.y, key) < 55){
+        key.taken = true;
+        STATE.hasKey = true;
+        invSlot.textContent = "🗝️";
+        invText.textContent = "Old brass key";
+        objectiveEl.textContent = "Unlock the door";
+        log("good","Key","You picked up a key. It feels important and slightly dramatic.");
+        return;
+      }
+
+      // Door unlock
+      if (distToRectCenter(player.x, player.y, door) < 70){
+        if (!STATE.hasKey){
+          log("bad","Lock","You jiggle the handle. Nope. You need a key.");
+          return;
+        }
+        if (!STATE.doorUnlocked){
+          STATE.doorUnlocked = true;
+          objectiveEl.textContent = "Go through the door";
+          log("good","Unlock","Click. The door is unlocked. Walk into it to pass through.");
+          return;
+        } else {
+          log("","Door","Already unlocked. Walk into the doorway to go through.");
+          return;
+        }
+      }
+
+      log("warn","Interact","Nothing useful here. Try near the key, sign, or door.");
+    }
+
+    if (STATE.room === 2){
+      const {sign} = WORLD.room2;
+      if (distToRectCenter(player.x, player.y, sign) < 80){
+        log("","Note", sign.text);
+        return;
+      }
+      log("warn","Interact","Nope. This room is about positioning, not button mashing.");
+    }
+  }
+
+  function updateUI(){
+    if (STATE.room === 1){
+      doorStateEl.textContent = STATE.doorUnlocked ? "Unlocked ✅" : "Locked 🔒";
+    } else {
+      doorStateEl.textContent = "Behind you 🚪";
+    }
+  }
+
+  // ===== Rendering =====
+  function drawRect(rect, fill, stroke){
+    ctx.fillStyle = fill;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    if (stroke){
+      ctx.strokeStyle = stroke;
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    }
+  }
+
+  function glowCircle(x,y,r, fill, glow){
+    ctx.save();
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render(){
+    // background
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // floor
+    ctx.fillStyle = COLORS.floor;
+    ctx.fillRect(18,18,684,384);
+
+    if (STATE.room === 1){
+      const room = WORLD.room1;
+
+      // walls
+      for (const w of room.walls){
+        drawRect(w, COLORS.wall, "rgba(255,255,255,0.08)");
+      }
+
+      // sign
+      drawRect(room.sign, "rgba(255,255,255,0.08)", COLORS.sign);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillText("NOTE:", room.sign.x + 10, room.sign.y + 17);
+
+      // key
+      if (!room.key.taken){
+        ctx.save();
+        ctx.shadowColor = COLORS.keyGlow;
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = COLORS.key;
+        ctx.fillRect(room.key.x, room.key.y, room.key.w, room.key.h);
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font = "12px system-ui";
+        ctx.fillText("KEY", room.key.x - 2, room.key.y - 6);
+      }
+
+      // door (portal)
+      const door = room.door;
+      const doorFill = STATE.doorUnlocked ? COLORS.doorUnlocked : COLORS.doorLocked;
+      drawRect({x: door.x-6, y: door.y-4, w: door.w+12, h: door.h+8}, "rgba(255,255,255,0.06)", COLORS.doorFrame);
+      drawRect(door, doorFill, "rgba(0,0,0,0.25)");
+
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.font = "12px system-ui";
+      ctx.fillText(STATE.doorUnlocked ? "DOOR (UNLOCKED)" : "DOOR (LOCKED)", door.x - 110, door.y - 10);
+
+    } else {
+      const room = WORLD.room2;
+
+      for (const w of room.walls){
+        drawRect(w, COLORS.wall, "rgba(255,255,255,0.08)");
+      }
+
+      // sign
+      drawRect(room.sign, "rgba(255,255,255,0.08)", COLORS.sign);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillText("NOTE:", room.sign.x + 10, room.sign.y + 17);
+
+      // exit tile
+      ctx.save();
+      ctx.shadowColor = "rgba(122,167,255,0.4)";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "rgba(122,167,255,0.65)";
+      ctx.fillRect(room.exit.x, room.exit.y, room.exit.w, room.exit.h);
+      ctx.restore();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.strokeRect(room.exit.x, room.exit.y, room.exit.w, room.exit.h);
+
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "12px system-ui";
+      ctx.fillText("EXIT", room.exit.x + 6, room.exit.y - 8);
+    }
+
+    // player
+    glowCircle(player.x, player.y, player.r, COLORS.player, COLORS.playerGlow);
+
+    // helper: interact hint if near something
+    drawInteractHint();
+  }
+
+  function drawInteractHint(){
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.80)";
+    ctx.font = "12px system-ui";
+
+    if (STATE.room === 1){
+      const room = WORLD.room1;
+      const nearKey = !room.key.taken && distToRectCenter(player.x, player.y, room.key) < 55;
+      const nearDoor = distToRectCenter(player.x, player.y, room.door) < 70;
+      const nearSign = distToRectCenter(player.x, player.y, room.sign) < 70;
+
+      if (nearKey || nearDoor || nearSign){
+        const text = "Press E";
+        ctx.fillText(text, player.x - 22, player.y - 20);
+      }
+    } else {
+      const room = WORLD.room2;
+      const nearSign = distToRectCenter(player.x, player.y, room.sign) < 80;
+      if (nearSign){
+        ctx.fillText("Press E", player.x - 22, player.y - 20);
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // ===== Game Loop =====
+  function tick(){
+    if (!STATE.won){
+      // movement
+      let ax = 0, ay = 0;
+      const left = keysDown.has("a") || keysDown.has("arrowleft");
+      const right = keysDown.has("d") || keysDown.has("arrowright");
+      const up = keysDown.has("w") || keysDown.has("arrowup");
+      const down = keysDown.has("s") || keysDown.has("arrowdown");
+
+      if (left) ax -= 1;
+      if (right) ax += 1;
+      if (up) ay -= 1;
+      if (down) ay += 1;
+
+      // normalize diagonal speed
+      const mag = Math.hypot(ax, ay) || 1;
+      ax /= mag; ay /= mag;
+
+      const nx = player.x + ax * player.speed;
+      const ny = player.y + ay * player.speed;
+
+      const walls = (STATE.room === 1) ? WORLD.room1.walls : WORLD.room2.walls;
+      moveAndCollide(nx, ny, walls);
+
+      // Door portal check (this is the critical "unlocked AND can pass" logic)
+      checkDoorPortal();
+
+      // Room 2 win condition
+      if (STATE.room === 2){
+        const exit = WORLD.room2.exit;
+        if (circleRectCollides(player.x, player.y, player.r, exit)){
+          STATE.won = true;
+          objectiveEl.textContent = "Escaped 🎉";
+          log("good","WIN","You escaped the cabin. The door behaved. The universe is balanced.");
+        }
+      }
+    }
+
+    updateUI();
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  function reset(){
+    STATE.room = 1;
+    STATE.hasKey = false;
+    STATE.doorUnlocked = false;
+    STATE.won = false;
+
+    WORLD.room1.key.taken = false;
+
+    player.x = 90; player.y = 300;
+
+    roomPill.textContent = "Room 1";
+    invSlot.textContent = "—";
+    invText.textContent = "Empty";
+    objectiveEl.textContent = "Find the key";
+    doorStateEl.textContent = "Locked 🔒";
+    logEl.innerHTML = "";
+    log("","Start","Find the key, unlock the door, and walk through it. No invisible-wall nonsense.");
+  }
+
+  // Start
+  reset();
+  tick();
+})();
+</script>
+</body>
+</html>

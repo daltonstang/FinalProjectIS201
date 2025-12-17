@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cabin 12</title>
+  <style>
+    :root{
+      --bg:#0a0d12;
+      --panel:#0f1520;
+      --panel2:#0c111a;
+      --ink:#e7eefc;
+      --muted:#a7b6d6;
+      --accent:#7cc7ff;
+      --danger:#ff6b6b;
+      --ok:#6bffb1;
+      --warn:#ffd36b;
+      --border:rgba(255,255,255,.10);
+      --shadow:rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 20% 10%, #111a2a 0%, var(--bg) 55%, #05070a 100%);
+      color:var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      height:100vh;
+      overflow:hidden;
+    }
+
+    .wrap{
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: 1fr 140px;
+      gap:10px;
+      padding:10px;
+      height:100vh;
+    }
+
+    /* Playfield */
+    .stage{
+      position:relative;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+      grid-column:1 / 2;
+      grid-row:1 / 3;
+      min-height:520px;
+    }
+    canvas{display:block; width:100%; height:100%;}
+    .stageTopLeft{
+      position:absolute;
+      top:10px; left:10px;
+      display:flex; gap:8px; align-items:center;
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      background: rgba(10,14,22,.55);
+      border:1px solid var(--border);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      backdrop-filter: blur(6px);
+    }
+    .pill strong{color:var(--ink); font-weight:650}
+    .dangerBar{
+      width:140px;
+      height:8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+      pointer-events:none;
+    }
+    .dangerFill{height:100%; width:0%; background: linear-gradient(90deg, var(--ok), var(--warn), var(--danger));}
+
+    /* Side panel (right) */
+    .panel{
+      grid-column:2 / 3;
+      grid-row:1 / 2;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:280px;
+    }
+    .panelHeader{
+      padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid var(--border);
+      background: rgba(10,14,22,.35);
+    }
+    .panelHeader .title{
+      font-weight:750;
+      letter-spacing:.2px;
+    }
+    .btn{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      color:var(--ink);
+      padding:7px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:12px;
+      user-select:none;
+    }
+    .btn:hover{border-color:rgba(255,255,255,.22)}
+    .btn:active{transform: translateY(1px)}
+    .panelBody{
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:auto;
+    }
+    .card{
+      border:1px solid var(--border);
+      background: rgba(10,14,22,.35);
+      border-radius:14px;
+      padding:10px;
+    }
+    .label{font-size:12px; color:var(--muted); margin-bottom:6px}
+    .objective{
+      font-size:14px;
+      line-height:1.35;
+    }
+    .controls{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+    .controls kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      border-bottom-color: rgba(255,255,255,.18);
+      padding:2px 6px;
+      border-radius:8px;
+      color:var(--ink);
+      font-size:11px;
+    }
+    .hint{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+    .pine{
+      font-size:13px;
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+    .pine strong{color:var(--accent)}
+    .statusLine{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .tag{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      padding:3px 8px;
+      border-radius:999px;
+    }
+
+    /* Bottom dialogue bar */
+    .bottom{
+      grid-column:2 / 3;
+      grid-row:2 / 3;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background: rgba(10,14,22,.35);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+    .bottomHeader{
+      padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid var(--border);
+      background: rgba(10,14,22,.35);
+    }
+    .log{
+      padding:10px 12px;
+      overflow:auto;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .log .entry{margin:0 0 8px 0}
+    .log .entry strong{color:var(--ink)}
+    .collapsed{
+      display:none !important;
+    }
+
+    /* Modal */
+    .modalBackdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:10;
+    }
+    .modalBackdrop.show{display:flex}
+    .modal{
+      width:min(520px, 96vw);
+      border:1px solid var(--border);
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(18,25,38,.98), rgba(10,14,22,.98));
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+      overflow:hidden;
+    }
+    .modalHeader{
+      padding:12px 14px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .modalHeader .h{
+      font-weight:780;
+      letter-spacing:.2px;
+    }
+    .modalBody{
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+    .row{
+      display:flex; gap:10px; align-items:center;
+      margin-top:10px;
+    }
+    input[type="text"]{
+      flex:1;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color:var(--ink);
+      outline:none;
+      font-size:14px;
+    }
+    input[type="text"]:focus{border-color:rgba(124,199,255,.55)}
+    .modalFooter{
+      padding:12px 14px;
+      border-top:1px solid var(--border);
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+
+    /* Mobile-ish */
+    @media (max-width: 980px){
+      .wrap{
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto auto;
+      }
+      .stage{grid-column:1 / 2; grid-row:1 / 2;}
+      .panel{grid-column:1 / 2; grid-row:2 / 3;}
+      .bottom{grid-column:1 / 2; grid-row:3 / 4;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="stage" id="stage">
+      <canvas id="c"></canvas>
+      <div class="stageTopLeft">
+        <div class="pill"><strong id="roomName">Cabin 12</strong> <span id="roomSub">Entry</span></div>
+        <div class="pill">Objective: <strong id="objectiveMini">…</strong></div>
+        <div class="dangerBar" title="Danger">
+          <div class="dangerFill" id="dangerFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel">
+      <div class="panelHeader">
+        <div class="title">Cabin 12</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn" id="togglePanel">Hide UI</button>
+          <button class="btn" id="restartBtn">Restart</button>
+        </div>
+      </div>
+
+      <div class="panelBody">
+        <div class="card">
+          <div class="label">Objective</div>
+          <div class="objective" id="objectiveText">…</div>
+          <div class="statusLine" style="margin-top:10px">
+            <span class="tag" id="invKey">Key: ✖</span>
+            <span class="tag" id="invFuse">Fuse: ✖</span>
+            <span class="tag" id="invPower">Power: ✖</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">PINE</div>
+          <div class="pine" id="pineText"><strong>PINE:</strong> If you can read this, you’re still you. For now.</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Hint (<span style="color:var(--ink)">press</span> <span class="controls"><kbd>H</kbd></span>)</div>
+          <div class="hint" id="hintText">Hints escalate: vague → specific → answer.</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Controls</div>
+          <div class="controls">
+            <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</div>
+            <div>Click to interact (objects take priority over doors)</div>
+            <div><kbd>E</kbd> hide (only at hiding spots)</div>
+            <div><kbd>H</kbd> hint</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="bottom" id="bottom">
+      <div class="bottomHeader">
+        <div style="font-weight:750">Event Log</div>
+        <button class="btn" id="toggleLog">Hide Log</button>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+
+  <div class="modalBackdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div class="h" id="modalTitle">Keypad</div>
+        <button class="btn" id="modalClose">Close</button>
+      </div>
+      <div class="modalBody" id="modalBody">
+        Enter the code.
+        <div class="row">
+          <input type="text" id="modalInput" inputmode="numeric" placeholder="e.g. 472" maxlength="6" />
+          <button class="btn" id="modalSubmit">Submit</button>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--muted)" id="modalHint"></div>
+      </div>
+      <div class="modalFooter">
+        <button class="btn" id="modalCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---------- Utilities ----------
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const dist2 = (ax, ay, bx, by) => {
+    const dx = ax - bx, dy = ay - by;
+    return dx*dx + dy*dy;
+  };
+  const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const now = () => performance.now();
+
+  // ---------- Canvas ----------
+  const canvas = document.getElementById('c');
+  const stage = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    canvas.width = Math.floor(r.width * dpr);
+    canvas.height = Math.floor(r.height * dpr);
+    canvas.style.width = r.width + 'px';
+    canvas.style.height = r.height + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    game?.onResize(r.width, r.height);
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- UI ----------
+  const elRoomSub = document.getElementById('roomSub');
+  const elRoomName = document.getElementById('roomName');
+  const elObjectiveMini = document.getElementById('objectiveMini');
+  const elObjectiveText = document.getElementById('objectiveText');
+  const elHintText = document.getElementById('hintText');
+  const elPineText = document.getElementById('pineText');
+  const elDangerFill = document.getElementById('dangerFill');
+  const elInvKey = document.getElementById('invKey');
+  const elInvFuse = document.getElementById('invFuse');
+  const elInvPower = document.getElementById('invPower');
+  const elLog = document.getElementById('log');
+
+  const panel = document.getElementById('panel');
+  const bottom = document.getElementById('bottom');
+
+  document.getElementById('togglePanel').addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+    bottom.classList.toggle('collapsed');
+    document.getElementById('togglePanel').textContent =
+      panel.classList.contains('collapsed') ? 'Show UI' : 'Hide UI';
+  });
+  document.getElementById('toggleLog').addEventListener('click', () => {
+    elLog.parentElement.classList.toggle('collapsed');
+    document.getElementById('toggleLog').textContent =
+      elLog.parentElement.classList.contains('collapsed') ? 'Show Log' : 'Hide Log';
+  });
+
+  function logLine(title, text){
+    const p = document.createElement('p');
+    p.className = 'entry';
+    p.innerHTML = `<strong>${title}</strong> ${text}`;
+    elLog.prepend(p);
+  }
+
+  // ---------- Modal ----------
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalHint = document.getElementById('modalHint');
+  const modalInput = document.getElementById('modalInput');
+  const modalBody = document.getElementById('modalBody');
+
+  let modalCallback = null;
+
+  function openModal({title, hint, placeholder, onSubmit}) {
+    modalCallback = onSubmit;
+    modalTitle.textContent = title || 'Keypad';
+    modalHint.textContent = hint || '';
+    modalInput.value = '';
+    modalInput.placeholder = placeholder || 'Enter code';
+    modalBackdrop.classList.add('show');
+    setTimeout(() => modalInput.focus(), 0);
+  }
+  function closeModal(){
+    modalBackdrop.classList.remove('show');
+    modalCallback = null;
+  }
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalSubmit').addEventListener('click', () => {
+    if (typeof modalCallback === 'function') modalCallback(modalInput.value.trim());
+  });
+  modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
+  modalInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('modalSubmit').click(); });
+
+  // ---------- Game Data ----------
+  const GAME_TITLE = "Cabin 12";
+  const ROOM_WALL_PAD = 22;
+
+  // Interactable types: pickup, read, keypad, install, lever, hide, door
+  class Interactable {
+    constructor(opts){
+      Object.assign(this, {
+        id: opts.id,
+        name: opts.name,
+        x: opts.x, y: opts.y,
+        w: opts.w, h: opts.h,
+        type: opts.type,
+        locked: !!opts.locked,
+        visible: opts.visible !== false,
+        once: !!opts.once,
+        used: false,
+        tooltip: opts.tooltip || null,
+        onClick: opts.onClick || (()=>{}),
+        highlight: opts.highlight !== false,
+      });
+    }
+    contains(px, py){
+      return this.visible && px >= this.x && px <= this.x + this.w && py >= this.y && py <= this.y + this.h;
+    }
+    center(){ return { cx: this.x + this.w/2, cy: this.y + this.h/2 }; }
+  }
+
+  class Room {
+    constructor({id, name, theme, objects, doors, hints, spawn, ambience}){
+      this.id = id;
+      this.name = name;
+      this.theme = theme;
+      this.objects = objects || [];
+      this.doors = doors || [];
+      this.hints = hints || ["", "", ""];
+      this.spawn = spawn || {x: 120, y: 120};
+      this.ambience = ambience || {};
+    }
+    allInteractables(){
+      // IMPORTANT: click priority objects over doors
+      return [...this.objects, ...this.doors];
+    }
+  }
+
+  class Threat {
+    constructor(){
+      this.active = false;
+      this.x = 0; this.y = 0;
+      this.vx = 0; this.vy = 0;
+      this.speed = 80; // px/s
+      this.state = 'idle'; // idle, hunting, leaving
+      this.spawnedAt = 0;
+      this.targetRoomId = null;
+      this.cooldownUntil = 0;
+    }
+    spawn(roomId, x, y){
+      this.active = true;
+      this.state = 'hunting';
+      this.targetRoomId = roomId;
+      this.x = x; this.y = y;
+      this.spawnedAt = now();
+    }
+    despawn(){
+      this.active = false;
+      this.state = 'idle';
+      this.targetRoomId = null;
+      this.cooldownUntil = now() + 8000;
+    }
+  }
+
+  class Game {
+    constructor(){
+      this.width = 800;
+      this.height = 600;
+
+      // Run-specific randomized puzzle state
+      this.run = {
+        safeCode: String(randInt(100, 999)),
+        digits: { a:null, b:null, c:null }, // split digits
+      };
+      const s = this.run.safeCode.split('');
+      this.run.digits.a = s[0];
+      this.run.digits.b = s[1];
+      this.run.digits.c = s[2];
+
+      // Player
+      this.player = {
+        x: 120, y: 120,
+        r: 12,
+        speed: 170, // px/s
+        hidden: false,
+        hideAt: null,
+      };
+
+      // Inventory / flags
+      this.inv = {
+        key: false,
+        fuse: false,
+        power: false,
+      };
+      this.flags = {
+        door1Unlocked: false,
+        safeOpened: false,
+        basementUnlocked: false,
+        fuseInstalled: false,
+        leverPulled: false,
+        escaped: false,
+      };
+
+      // Input
+      this.keys = new Set();
+      this.mouse = { x:0, y:0, down:false };
+
+      // Hints
+      this.hintLevel = 0;
+
+      // Danger system
+      this.danger = 0; // 0..1
+      this.mistakes = 0;
+      this.roomTime = 0;
+      this.lastDangerTick = now();
+
+      // Threat
+      this.threat = new Threat();
+
+      // PINE
+      this.pineMood = 0; // 0 calm -> 1 tense
+      this.pineLine = `${GAME_TITLE} online.\nSignal: weak.\nBut you can still move. That's something.`;
+      this.lastPineAt = 0;
+
+      // Rooms
+      this.rooms = this.buildRooms();
+      this.roomIndex = 0;
+      this.room = this.rooms[this.roomIndex];
+      this.setRoom(this.room.id, true);
+
+      // Loop
+      this.lastT = now();
+      this.dead = false;
+      this.deathFade = 0;
+      this.winFade = 0;
+
+      this.syncUI();
+      logLine("SYSTEM", `New run. Safe code randomized.`);
+      logLine("PINE", `I feel a number in the air. Like metal teeth clicking.`);
+    }
+
+    onResize(w, h){
+      this.width = w;
+      this.height = h;
+    }
+
+    buildRooms(){
+      // shared helper: door rectangles at edges
+      const mkDoor = (opts) => new Interactable({
+        id: opts.id,
+        name: opts.name,
+        x: opts.x, y: opts.y, w: opts.w, h: opts.h,
+        type: 'door',
+        locked: !!opts.locked,
+        tooltip: opts.tooltip || 'Door',
+        onClick: opts.onClick,
+      });
+
+      const mkObj = (opts) => new Interactable(opts);
+
+      // Room 1: Entry
+      const r1 = new Room({
+        id: "entry",
+        name: "Entry",
+        theme: { floor:"#0b1018", vignette:0.48, grain:0.08 },
+        spawn: {x: 130, y: 320},
+        hints: [
+          "Look for something ordinary that people never look under.",
+          "Try the welcome mat. Yes, the boring rectangle.",
+          "Click the mat to take the key."
+        ],
+        objects: [
+          mkObj({
+            id:"mat",
+            name:"Welcome Mat",
+            x: 240, y: 360, w: 140, h: 44,
+            type:"pickup",
+            tooltip:"Mat",
+            onClick: (g) => {
+              if (g.inv.key) {
+                g.pineSpeak("Already checked.\nStill feels like stepping on a lie.");
+                return;
+              }
+              g.inv.key = true;
+              g.flags.door1Unlocked = true;
+              g.pineSpeak("Key acquired.\nIt’s warm. That’s… not normal.");
+              logLine("FOUND", "You picked up a small brass key.");
+              g.bumpDanger(0.00);
+              g.syncUI();
+            }
+          }),
+          mkObj({
+            id:"note1",
+            name:"Scratched Note",
+            x: 520, y: 140, w: 170, h: 70,
+            type:"read",
+            tooltip:"Note",
+            onClick: (g) => {
+              g.pineSpeak("It says:\n“CABIN 12 DOES NOT LIKE TO BE IGNORED.”\nCool. Love that.");
+              logLine("READ", "A scratched note warns you not to waste time.");
+              g.bumpDanger(0.03);
+            }
+          }),
+        ],
+        doors: [
+          mkDoor({
+            id:"door_entry_to_lounge",
+            name:"Door to Lounge",
+            x: 760, y: 260, w: 26, h: 120,
+            locked: true,
+            tooltip:"Door (to Lounge)",
+            onClick: (g) => {
+              if (!g.inv.key) {
+                g.pineSpeak("Locked.\nBut it’s a simple lock. Key-simple.");
+                g.registerMistake();
+                return;
+              }
+              g.pineSpeak("Unlocked.\nThe cabin pretends it didn’t notice.");
+              logLine("DOOR", "You unlocked the door to the lounge.");
+              g.goTo("lounge", {x: 80, y: 320});
+            }
+          })
+        ]
+      });
+
+      // Room 2: Lounge
+      const r2 = new Room({
+        id:"lounge",
+        name:"Lounge",
+        theme: { floor:"#0b0f12", vignette:0.52, grain:0.10 },
+        spawn: {x: 90, y: 320},
+        hints: [
+          "You don’t need to guess the safe code. The room will give it to you… in pieces.",
+          "Find three separate clues: photo, coaster, and wall clock.",
+          "Digits: photo = first, coaster = second, clock = third. Then open the safe."
+        ],
+        objects: [
+          mkObj({
+            id:"photo",
+            name:"Family Photo",
+            x: 160, y: 120, w: 160, h: 90,
+            type:"read",
+            tooltip:"Photo",
+            onClick: (g) => {
+              g.pineSpeak(`The photo’s frame has a carved notch.\nA single digit: ${g.run.digits.a}`);
+              logLine("CLUE", `Photo reveals the first digit.`);
+              g.bumpDanger(0.01);
+            }
+          }),
+          mkObj({
+            id:"coaster",
+            name:"Coaster",
+            x: 360, y: 430, w: 90, h: 60,
+            type:"read",
+            tooltip:"Coaster",
+            onClick: (g) => {
+              g.pineSpeak(`Under the coaster.\nA scribbled digit: ${g.run.digits.b}`);
+              logLine("CLUE", `Coaster reveals the second digit.`);
+              g.bumpDanger(0.01);
+            }
+          }),
+          mkObj({
+            id:"clock",
+            name:"Wall Clock",
+            x: 560, y: 120, w: 110, h: 110,
+            type:"read",
+            tooltip:"Clock",
+            onClick: (g) => {
+              g.pineSpeak(`The clock ticks wrong.\nBut the backplate shows a digit: ${g.run.digits.c}`);
+              logLine("CLUE", `Clock reveals the third digit.`);
+              g.bumpDanger(0.01);
+            }
+          }),
+          mkObj({
+            id:"safe",
+            name:"Safe",
+            x: 620, y: 380, w: 130, h: 120,
+            type:"keypad",
+            tooltip:"Safe",
+            onClick: (g) => {
+              if (g.flags.safeOpened) {
+                g.pineSpeak("Safe is open.\nEmpty of surprises. For now.");
+                return;
+              }
+              openModal({
+                title: "Safe Keypad",
+                hint: "Enter the 3-digit code you assembled from clues.",
+                placeholder: "###",
+                onSubmit: (value) => {
+                  const v = value.replace(/\D/g,'').slice(0,3);
+                  if (v.length !== 3){
+                    modalHint.textContent = "Needs 3 digits.";
+                    g.registerMistake(false);
+                    return;
+                  }
+                  if (v === g.run.safeCode){
+                    closeModal();
+                    g.flags.safeOpened = true;
+                    g.inv.fuse = true;
+                    g.pineSpeak("Correct.\nThe safe exhales.\nYou take the fuse.");
+                    logLine("FOUND", "You found a fuse inside the safe.");
+                    g.bumpDanger(-0.03);
+                    g.syncUI();
+                  } else {
+                    modalHint.textContent = "Wrong. The metal feels… annoyed.";
+                    g.registerMistake(true);
+                  }
+                }
+              });
+            }
+          }),
+        ],
+        doors: [
+          mkDoor({
+            id:"door_lounge_back",
+            name:"Back to Entry",
+            x: 10, y: 260, w: 26, h: 120,
+            locked:false,
+            tooltip:"Door (to Entry)",
+            onClick: (g)=> {
+              g.pineSpeak("Backtracking.\nThe cabin approves. It likes loops.");
+              g.goTo("entry", {x: 700, y: 320});
+            }
+          }),
+          mkDoor({
+            id:"door_lounge_to_study",
+            name:"Door to Study",
+            x: 760, y: 260, w: 26, h: 120,
+            locked:true,
+            tooltip:"Door (to Study)",
+            onClick: (g)=> {
+              if (!g.inv.fuse){
+                g.pineSpeak("Locked.\nAnd it smells like electricity.\nFind something that belongs in a breaker box.");
+                g.registerMistake();
+                return;
+              }
+              g.pineSpeak("Door clicks.\nLike a jaw deciding to open.");
+              logLine("DOOR", "You unlocked the study door.");
+              g.goTo("study", {x: 80, y: 320});
+            }
+          })
+        ]
+      });
+
+      // Room 3: Study
+      const r3 = new Room({
+        id:"study",
+        name:"Study",
+        theme: { floor:"#0b0d10", vignette:0.56, grain:0.12 },
+        spawn: {x: 90, y: 320},
+        hints: [
+          "Basement access is about power, not permission.",
+          "The breaker box looks hungry. Install the fuse there (click).",
+          "Once power is on, the basement door will behave."
+        ],
+        objects: [
+          mkObj({
+            id:"breaker",
+            name:"Breaker Box",
+            x: 560, y: 180, w: 160, h: 120,
+            type:"install",
+            tooltip:"Breaker Box",
+            onClick: (g)=> {
+              if (g.inv.power){
+                g.pineSpeak("Power is already live.\nThe cabin hums like it’s thinking.");
+                return;
+              }
+              if (!g.inv.fuse){
+                g.pineSpeak("Empty slot.\nNo fuse.\nNo mercy.");
+                g.registerMistake();
+                return;
+              }
+              g.inv.fuse = false;
+              g.inv.power = true;
+              g.flags.fuseInstalled = true;
+              g.pineSpeak("Fuse installed.\nLights feel… slightly less honest.");
+              logLine("POWER", "You installed the fuse. Power is on.");
+              g.bumpDanger(0.02);
+              g.syncUI();
+            }
+          }),
+          mkObj({
+            id:"desk",
+            name:"Desk",
+            x: 210, y: 140, w: 220, h: 90,
+            type:"read",
+            tooltip:"Desk",
+            onClick: (g)=> {
+              g.pineSpeak("There’s a pressed indent on the desk.\nLike something heavy lived here.\nLike it was waiting.");
+              g.bumpDanger(0.02);
+              logLine("NOTE", "A desk bears an impression like a missing object.");
+            }
+          }),
+          mkObj({
+            id:"closet",
+            name:"Closet",
+            x: 150, y: 410, w: 140, h: 110,
+            type:"hide",
+            tooltip:"Closet (Hide)",
+            onClick: (g)=> {
+              // click can also hide, but E is more intentional
+              g.tryHideAt("closet");
+            }
+          }),
+        ],
+        doors: [
+          mkDoor({
+            id:"door_study_back",
+            name:"Back to Lounge",
+            x: 10, y: 260, w: 26, h: 120,
+            locked:false,
+            tooltip:"Door (to Lounge)",
+            onClick: (g)=> g.goTo("lounge", {x: 700, y: 320})
+          }),
+          mkDoor({
+            id:"door_study_to_basement",
+            name:"Basement Door",
+            x: 760, y: 260, w: 26, h: 120,
+            locked:true,
+            tooltip:"Door (to Basement)",
+            onClick: (g)=> {
+              if (!g.inv.power){
+                g.pineSpeak("The handle refuses.\nIt wants power.\nGive it the illusion of safety.");
+                g.registerMistake();
+                return;
+              }
+              g.pineSpeak("Basement.\nAir below is colder.\nAnd… listening.");
+              logLine("DOOR", "You opened the basement door.");
+              g.goTo("basement", {x: 80, y: 320});
+            }
+          })
+        ]
+      });
+
+      // Room 4: Basement
+      const r4 = new Room({
+        id:"basement",
+        name:"Basement",
+        theme: { floor:"#080a0e", vignette:0.62, grain:0.14 },
+        spawn: {x: 100, y: 320},
+        hints: [
+          "The lever is the last honest mechanism left.",
+          "Pull the lever. If something resists, it’s the cabin, not you.",
+          "Pull the lever, then take the exit."
+        ],
+        objects: [
+          mkObj({
+            id:"lever",
+            name:"Main Lever",
+            x: 590, y: 310, w: 120, h: 120,
+            type:"lever",
+            tooltip:"Lever",
+            onClick: (g)=> {
+              if (!g.inv.power){
+                g.pineSpeak("No power.\nNo leverage.");
+                g.registerMistake();
+                return;
+              }
+              if (g.flags.leverPulled){
+                g.pineSpeak("Already pulled.\nThe cabin is committed now.");
+                return;
+              }
+              g.flags.leverPulled = true;
+              g.pineSpeak("Lever pulled.\nSomewhere upstairs, a lock sighs.");
+              logLine("SYSTEM", "You heard a door unlatch somewhere.");
+              g.bumpDanger(0.04);
+              g.syncUI();
+            }
+          }),
+          mkObj({
+            id:"crate",
+            name:"Old Crate",
+            x: 240, y: 130, w: 180, h: 100,
+            type:"read",
+            tooltip:"Crate",
+            onClick: (g)=> {
+              g.pineSpeak("The crate label is rubbed off.\nBut you can feel what it used to say:\n“RETURN.”");
+              g.bumpDanger(0.03);
+              logLine("READ", "A crate suggests something keeps getting returned here.");
+            }
+          }),
+          mkObj({
+            id:"pipehide",
+            name:"Pipe Alcove",
+            x: 120, y: 430, w: 120, h: 90,
+            type:"hide",
+            tooltip:"Alcove (Hide)",
+            onClick: (g)=> g.tryHideAt("pipehide")
+          }),
+        ],
+        doors: [
+          mkDoor({
+            id:"door_basement_back",
+            name:"Back to Study",
+            x: 10, y: 260, w: 26, h: 120,
+            locked:false,
+            tooltip:"Door (to Study)",
+            onClick: (g)=> g.goTo("study", {x: 700, y: 320})
+          }),
+          mkDoor({
+            id:"door_basement_to_outside",
+            name:"Stairs Up / Exit",
+            x: 760, y: 260, w: 26, h: 120,
+            locked:true,
+            tooltip:"Door (to Outside)",
+            onClick: (g)=> {
+              if (!g.flags.leverPulled){
+                g.pineSpeak("Locked.\nThe lever is a promise.\nMake it.");
+                g.registerMistake();
+                return;
+              }
+              g.pineSpeak("Go.\nDon’t look at the corners.\nThey’re watching for that.");
+              logLine("DOOR", "You went up and out.");
+              g.goTo("outside", {x: 120, y: 320});
+            }
+          })
+        ]
+      });
+
+      // Room 5: Outside (win)
+      const r5 = new Room({
+        id:"outside",
+        name:"Outside",
+        theme: { floor:"#0b1220", vignette:0.40, grain:0.06 },
+        spawn: {x: 120, y: 320},
+        hints: [
+          "You already did it.",
+          "Walk forward. Don’t negotiate.",
+          "Keep moving. The cabin hates endings."
+        ],
+        objects: [
+          mkObj({
+            id:"sign",
+            name:"Snowy Sign",
+            x: 520, y: 250, w: 220, h: 90,
+            type:"read",
+            tooltip:"Sign",
+            onClick: (g)=> {
+              g.pineSpeak("The sign says:\n“WELCOME BACK.”\nBut you’re… outside.\nRight?");
+              logLine("READ", "A sign welcomes you back. Outside.");
+              g.bumpDanger(0.01);
+            }
+          })
+        ],
+        doors: [
+          mkDoor({
+            id:"door_outside_finish",
+            name:"Leave",
+            x: 760, y: 260, w: 26, h: 120,
+            locked:false,
+            tooltip:"Path (Leave)",
+            onClick: (g)=> {
+              if (g.flags.escaped) return;
+              g.flags.escaped = true;
+              g.pineSpeak("You escaped.\nOr the cabin let you practice escaping.\nAmbiguity: confirmed.");
+              logLine("WIN", "You step away from Cabin 12.");
+              g.winFade = 0.001;
+            }
+          }),
+          mkDoor({
+            id:"door_outside_back",
+            name:"Back to Basement",
+            x: 10, y: 260, w: 26, h: 120,
+            locked:false,
+            tooltip:"Path (Back)",
+            onClick: (g)=> g.goTo("basement", {x: 700, y: 320})
+          })
+        ]
+      });
+
+      return [r1, r2, r3, r4, r5];
+    }
+
+    roomById(id){ return this.rooms.find(r => r.id === id); }
+
+    setRoom(id, fresh=false, spawnOverride=null){
+      const r = this.roomById(id);
+      if (!r) return;
+      this.room = r;
+      this.roomIndex = this.rooms.indexOf(r);
+      const spawn = spawnOverride || r.spawn;
+      this.player.x = spawn.x;
+      this.player.y = spawn.y;
+      this.player.hidden = false;
+      this.player.hideAt = null;
+
+      this.roomTime = 0;
+      this.hintLevel = 0;
+
+      // mild reset for threat if you change rooms quickly
+      if (fresh) {
+        this.threat.despawn();
+        this.danger = 0;
+      }
+      this.syncUI();
+    }
+
+    goTo(id, spawn){
+      // Semi-linear: allow backtracking, but danger rises if you loiter
+      this.setRoom(id, false, spawn);
+      this.pulseAmbience();
+    }
+
+    pulseAmbience(){
+      // Just UI flavor via PINE mood shift
+      const d = this.danger;
+      this.pineMood = clamp(d, 0, 1);
+    }
+
+    pineSpeak(text){
+      const mood = this.danger;
+      const prefix = "<strong>PINE:</strong> ";
+      const t = text;
+      elPineText.innerHTML = prefix + t.replace(/\n/g, "<br>");
+      this.pineLine = text;
+
+      // log occasionally
+      if (now() - this.lastPineAt > 1200){
+        logLine("PINE", text.split("\n")[0]);
+        this.lastPineAt = now();
+      }
+    }
+
+    objectiveText(){
+      switch(this.room.id){
+        case "entry":
+          return this.inv.key ? "Unlock the door to the lounge." : "Find a key in the entry room.";
+        case "lounge":
+          return this.flags.safeOpened ? "Use the fuse to access the study door." : "Assemble the safe code and open the safe.";
+        case "study":
+          return this.inv.power ? "Open the basement door." : "Restore power by installing the fuse in the breaker box.";
+        case "basement":
+          return this.flags.leverPulled ? "Take the exit upstairs." : "Pull the main lever.";
+        case "outside":
+          return this.flags.escaped ? "You’re out. Decide what that means." : "Leave the cabin grounds.";
+        default:
+          return "…";
+      }
+    }
+
+    hintForRoom(){
+      const h = this.room.hints || ["", "", ""];
+      return h[clamp(this.hintLevel, 0, h.length-1)];
+    }
+
+    bumpDanger(amount){
+      this.danger = clamp(this.danger + amount, 0, 1);
+      this.pineMood = this.danger;
+    }
+
+    registerMistake(major=true){
+      this.mistakes += 1;
+      this.bumpDanger(major ? 0.06 : 0.03);
+      // spawn threat if danger is high enough and not cooling down
+      this.checkThreatSpawn();
+      this.syncUI();
+    }
+
+    checkThreatSpawn(){
+      if (this.threat.active) return;
+      if (now() < this.threat.cooldownUntil) return;
+
+      // Threshold depends on room: basement more tense
+      const base = (this.room.id === "basement") ? 0.35 : 0.48;
+      if (this.danger >= base){
+        // spawn off-screen edge
+        const side = randInt(0,3);
+        let sx, sy;
+        const pad = 30;
+        if (side === 0) { sx = pad; sy = randInt(pad, this.height-pad); }
+        if (side === 1) { sx = this.width - pad; sy = randInt(pad, this.height-pad); }
+        if (side === 2) { sx = randInt(pad, this.width-pad); sy = pad; }
+        if (side === 3) { sx = randInt(pad, this.width-pad); sy = this.height - pad; }
+
+        this.threat.spawn(this.room.id, sx, sy);
+        this.pineSpeak("It noticed.\nMove with intention.\nOr hide.");
+        logLine("DANGER", "A presence slips into the room.");
+      }
+    }
+
+    tryHideAt(hideId){
+      // Hiding only works if near a hide spot object in this room
+      const hideObj = this.room.objects.find(o => o.id === hideId && o.type === "hide");
+      if (!hideObj || !hideObj.visible) return;
+
+      const {cx, cy} = hideObj.center();
+      const near = dist2(this.player.x, this.player.y, cx, cy) < 70*70;
+      if (!near){
+        this.pineSpeak("Too far to hide.\nThe cabin doesn’t let you teleport.");
+        return;
+      }
+
+      this.player.hidden = !this.player.hidden;
+      this.player.hideAt = this.player.hidden ? hideId : null;
+
+      if (this.player.hidden){
+        this.pineSpeak("Hiding.\nBreathe quietly.\nPretend you’re furniture.");
+        logLine("HIDE", "You tuck yourself out of sight.");
+      } else {
+        this.pineSpeak("Out again.\nTry not to be predictable.");
+        logLine("HIDE", "You step back out.");
+      }
+    }
+
+    restart(){
+      // full reset
+      this.dead = false;
+      this.deathFade = 0;
+      this.winFade = 0;
+      this.mistakes = 0;
+      this.roomTime = 0;
+      this.danger = 0;
+      this.threat.despawn();
+
+      // reroll puzzle
+      this.run.safeCode = String(randInt(100, 999));
+      const s = this.run.safeCode.split('');
+      this.run.digits.a = s[0]; this.run.digits.b = s[1]; this.run.digits.c = s[2];
+
+      // inv / flags
+      this.inv.key = false; this.inv.fuse = false; this.inv.power = false;
+      this.flags.door1Unlocked = false;
+      this.flags.safeOpened = false;
+      this.flags.basementUnlocked = false;
+      this.flags.fuseInstalled = false;
+      this.flags.leverPulled = false;
+      this.flags.escaped = false;
+
+      // rebuild rooms so clue text reflects new run
+      this.rooms = this.buildRooms();
+      this.setRoom("entry", true);
+
+      elLog.innerHTML = "";
+      logLine("SYSTEM", "Restarted. New run seeded.");
+      logLine("PINE", "Again.\nThe cabin loves ‘again’.");
+      this.pineSpeak("Reboot complete.\nTry not to repeat the same mistakes.\nThe cabin keeps score.");
+      this.syncUI();
+    }
+
+    syncUI(){
+      elRoomName.textContent = GAME_TITLE;
+      elRoomSub.textContent = this.room.name;
+
+      const obj = this.objectiveText();
+      elObjectiveMini.textContent = obj.length > 36 ? (obj.slice(0, 35) + "…") : obj;
+      elObjectiveText.textContent = obj;
+
+      elHintText.textContent = this.hintForRoom();
+
+      elInvKey.textContent = `Key: ${this.inv.key ? "✔" : "✖"}`;
+      elInvFuse.textContent = `Fuse: ${this.inv.fuse ? "✔" : "✖"}`;
+      elInvPower.textContent = `Power: ${this.inv.power ? "✔" : "✖"}`;
+
+      elDangerFill.style.width = `${Math.round(this.danger * 100)}%`;
+    }
+
+    // ---------- Interaction ----------
+    nearestHighlight(){
+      let best = null;
+      let bestD = Infinity;
+
+      for (const o of this.room.objects){
+        if (!o.visible || !o.highlight) continue;
+        const c = o.center();
+        const d = dist2(this.player.x, this.player.y, c.cx, c.cy);
+        if (d < bestD){
+          bestD = d;
+          best = o;
+        }
+      }
+      // doors can highlight only when close
+      for (const d of this.room.doors){
+        if (!d.visible) continue;
+        const c = d.center();
+        const dd = dist2(this.player.x, this.player.y, c.cx, c.cy);
+        if (dd < bestD){
+          bestD = dd;
+          best = d;
+        }
+      }
+
+      if (best && bestD < 75*75) return best;
+      return null;
+    }
+
+    clickableAt(mx, my){
+      // click priority: objects FIRST, then doors
+      for (const o of this.room.objects){
+        if (o.contains(mx, my)) return o;
+      }
+      for (const d of this.room.doors){
+        if (d.contains(mx, my)) return d;
+      }
+      return null;
+    }
+
+    click(mx, my){
+      if (this.dead || this.flags.escaped) return;
+
+      const it = this.clickableAt(mx, my);
+      if (!it) return;
+
+      // mild “nearby” requirement for most interactions
+      const c = it.center();
+      const near = dist2(this.player.x, this.player.y, c.cx, c.cy) < 110*110;
+
+      if (it.type !== "door" && !near){
+        this.pineSpeak("Too far.\nGet closer.\nThe cabin hates lazy hands.");
+        return;
+      }
+
+      if (it.type === "door"){
+        // doors can be used from a bit farther, but still sane
+        const nearDoor = dist2(this.player.x, this.player.y, c.cx, c.cy) < 160*160;
+        if (!nearDoor){
+          this.pineSpeak("Get to the door.\nIt wants to see you choose.");
+          return;
+        }
+      }
+
+      // route
+      it.onClick(this);
+    }
+
+    // ---------- Update / Draw ----------
+    update(dt){
+      if (this.flags.escaped){
+        this.winFade = clamp(this.winFade + dt * 0.25, 0, 1);
+      }
+
+      if (this.dead){
+        this.deathFade = clamp(this.deathFade + dt * 0.7, 0, 1);
+        return;
+      }
+
+      // time pressure -> danger creeps up
+      this.roomTime += dt;
+      // very gentle creep, more in basement
+      const creep = (this.room.id === "basement") ? 0.006 : 0.004;
+      this.bumpDanger(dt * creep);
+
+      // spawn threat if loitering too long
+      if (this.roomTime > 40 && this.danger > 0.32){
+        this.checkThreatSpawn();
+      }
+
+      // player movement
+      let vx = 0, vy = 0;
+      if (!this.player.hidden){
+        if (this.keys.has('w')) vy -= 1;
+        if (this.keys.has('s')) vy += 1;
+        if (this.keys.has('a')) vx -= 1;
+        if (this.keys.has('d')) vx += 1;
+      }
+
+      const mag = Math.hypot(vx, vy) || 1;
+      vx /= mag; vy /= mag;
+
+      const speed = this.player.speed;
+      this.player.x += vx * speed * dt;
+      this.player.y += vy * speed * dt;
+
+      // boundaries
+      const minX = ROOM_WALL_PAD + this.player.r;
+      const maxX = this.width - ROOM_WALL_PAD - this.player.r;
+      const minY = ROOM_WALL_PAD + this.player.r;
+      const maxY = this.height - ROOM_WALL_PAD - this.player.r;
+      this.player.x = clamp(this.player.x, minX, maxX);
+      this.player.y = clamp(this.player.y, minY, maxY);
+
+      // Threat behavior
+      this.updateThreat(dt);
+
+      // UI updates
+      elDangerFill.style.width = `${Math.round(this.danger * 100)}%`;
+
+      // PINE occasional mood nudge
+      if (now() - this.lastPineAt > 9000){
+        if (this.danger > 0.55){
+          this.pineSpeak("The air feels thinner.\nTry not to argue with locks.");
+        } else if (this.danger < 0.25){
+          this.pineSpeak("Keep going.\nDon’t let the room teach you patience.");
+        }
+      }
+    }
+
+    updateThreat(dt){
+      const t = this.threat;
+      if (!t.active) return;
+
+      // If you change rooms, threat despawns (it prefers local rules)
+      if (t.targetRoomId !== this.room.id){
+        t.despawn();
+        return;
+      }
+
+      if (this.player.hidden){
+        // It slows, drifts, then leaves
+        t.speed = 50;
+        t.state = 'leaving';
+      } else {
+        t.speed = 95 + this.danger * 60;
+        t.state = 'hunting';
+      }
+
+      // Choose target: player position, unless leaving (then wander to edge)
+      let tx, ty;
+      if (t.state === 'hunting'){
+        tx = this.player.x; ty = this.player.y;
+      } else {
+        // drift to nearest edge
+        const edges = [
+          {x: 10, y: t.y},
+          {x: this.width-10, y: t.y},
+          {x: t.x, y: 10},
+          {x: t.x, y: this.height-10},
+        ];
+        let best = edges[0], bd = Infinity;
+        for (const e of edges){
+          const d = dist2(t.x, t.y, e.x, e.y);
+          if (d < bd){ bd = d; best = e; }
+        }
+        tx = best.x; ty = best.y;
+      }
+
+      const dx = tx - t.x, dy = ty - t.y;
+      const m = Math.hypot(dx, dy) || 1;
+      t.vx = dx / m; t.vy = dy / m;
+      t.x += t.vx * t.speed * dt;
+      t.y += t.vy * t.speed * dt;
+
+      // if leaving and near edge, despawn + reduce danger
+      if (t.state === 'leaving'){
+        const nearEdge = (t.x < 14 || t.x > this.width-14 || t.y < 14 || t.y > this.height-14);
+        if (nearEdge){
+          this.bumpDanger(-0.18);
+          this.threat.despawn();
+          this.pineSpeak("It’s gone.\nFor now.\nDon’t celebrate loudly.");
+          logLine("DANGER", "The presence slips away.");
+          this.syncUI();
+          return;
+        }
+      }
+
+      // Catch player
+      if (!this.player.hidden){
+        const catchDist = 18;
+        if (dist2(t.x, t.y, this.player.x, this.player.y) < catchDist*catchDist){
+          this.die();
+        }
+      }
+    }
+
+    die(){
+      this.dead = true;
+      this.deathFade = 0.001;
+      this.pineSpeak("…\n\nSignal lost.");
+      logLine("DEATH", "A sudden blackout. You’re back at the start.");
+      // Auto-restart after fade
+      setTimeout(() => this.restart(), 900);
+    }
+
+    draw(){
+      // background
+      const th = this.room.theme;
+      ctx.fillStyle = th.floor;
+      ctx.fillRect(0,0,this.width,this.height);
+
+      // floor “boards”/texture lines
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.strokeStyle = "rgba(255,255,255,.18)";
+      for (let y=40; y<this.height; y+=38){
+        ctx.beginPath();
+        ctx.moveTo(ROOM_WALL_PAD, y);
+        ctx.lineTo(this.width-ROOM_WALL_PAD, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Room border
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,.12)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ROOM_WALL_PAD, ROOM_WALL_PAD, this.width-ROOM_WALL_PAD*2, this.height-ROOM_WALL_PAD*2);
+      ctx.restore();
+
+      // Draw doors (behind objects visually, but click logic prioritizes objects)
+      for (const d of this.room.doors){
+        if (!d.visible) continue;
+        this.drawDoor(d);
+      }
+
+      // Draw objects
+      for (const o of this.room.objects){
+        if (!o.visible) continue;
+        this.drawObject(o);
+      }
+
+      // highlight nearest interactable
+      const hi = this.nearestHighlight();
+      if (hi){
+        const {cx, cy} = hi.center();
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = "rgba(124,199,255,.70)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 26, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(124,199,255,.06)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 26, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+
+        // small tooltip
+        ctx.save();
+        ctx.font = "12px system-ui";
+        ctx.fillStyle = "rgba(10,14,22,.65)";
+        ctx.strokeStyle = "rgba(255,255,255,.12)";
+        const text = hi.tooltip || hi.name;
+        const pad = 8;
+        const w = ctx.measureText(text).width + pad*2;
+        const x = clamp(cx - w/2, 10, this.width - w - 10);
+        const y = clamp(cy - 44, 10, this.height - 30);
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, 26, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(231,238,252,.92)";
+        ctx.fillText(text, x+pad, y+17);
+        ctx.restore();
+      }
+
+      // player
+      this.drawPlayer();
+
+      // threat
+      if (this.threat.active){
+        this.drawThreat();
+      }
+
+      // vignette
+      ctx.save();
+      const g = ctx.createRadialGradient(this.width*0.5, this.height*0.5, Math.min(this.width,this.height)*0.15,
+                                        this.width*0.5, this.height*0.5, Math.max(this.width,this.height)*0.65);
+      g.addColorStop(0, "rgba(0,0,0,0)");
+      g.addColorStop(1, `rgba(0,0,0,${th.vignette})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,this.width,this.height);
+      ctx.restore();
+
+      // subtle grain
+      this.drawGrain(th.grain || 0.08);
+
+      // death fade
+      if (this.dead && this.deathFade > 0){
+        ctx.save();
+        ctx.fillStyle = `rgba(0,0,0,${clamp(this.deathFade,0,1)})`;
+        ctx.fillRect(0,0,this.width,this.height);
+        ctx.restore();
+      }
+
+      // win overlay
+      if (this.flags.escaped){
+        ctx.save();
+        const a = clamp(this.winFade, 0, 1);
+        ctx.fillStyle = `rgba(0,0,0,${0.55*a})`;
+        ctx.fillRect(0,0,this.width,this.height);
+        ctx.fillStyle = `rgba(231,238,252,${0.95*a})`;
+        ctx.font = "800 36px system-ui";
+        ctx.fillText("YOU ESCAPED", 48, 90);
+        ctx.font = "14px system-ui";
+        ctx.fillStyle = `rgba(167,182,214,${0.95*a})`;
+        ctx.fillText("Or the cabin let you rehearse escaping.", 48, 122);
+        ctx.fillText("Restart to see new randomized safe code.", 48, 146);
+        ctx.restore();
+      }
+    }
+
+    drawObject(o){
+      ctx.save();
+      // base block
+      ctx.fillStyle = "rgba(255,255,255,.08)";
+      ctx.strokeStyle = "rgba(255,255,255,.14)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(o.x, o.y, o.w, o.h, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // icon hint
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "rgba(124,199,255,.85)";
+      ctx.font = "700 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace";
+      const glyph = ({
+        pickup:"◎",
+        read:"⌁",
+        keypad:"#",
+        install:"↯",
+        lever:"⟲",
+        hide:"▦"
+      })[o.type] || "•";
+      ctx.fillText(glyph, o.x + 10, o.y + 20);
+
+      ctx.restore();
+    }
+
+    drawDoor(d){
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,.06)";
+      ctx.strokeStyle = "rgba(255,255,255,.16)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(d.x, d.y, d.w, d.h, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      // lock indicator (approx)
+      const locked = this.isDoorLocked(d);
+      ctx.fillStyle = locked ? "rgba(255,107,107,.85)" : "rgba(107,255,177,.85)";
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(d.x + d.w/2, d.y + 18, 6, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    isDoorLocked(d){
+      // door logic mirrors click logic
+      if (d.id === "door_entry_to_lounge") return !this.inv.key;
+      if (d.id === "door_lounge_to_study") return !this.inv.fuse && !this.flags.safeOpened; // you only get fuse from safe
+      if (d.id === "door_study_to_basement") return !this.inv.power;
+      if (d.id === "door_basement_to_outside") return !this.flags.leverPulled;
+      return false;
+    }
+
+    drawPlayer(){
+      ctx.save();
+      // body
+      ctx.globalAlpha = this.player.hidden ? 0.25 : 1.0;
+      ctx.fillStyle = "rgba(231,238,252,.92)";
+      ctx.beginPath();
+      ctx.arc(this.player.x, this.player.y, this.player.r, 0, Math.PI*2);
+      ctx.fill();
+
+      // outline
+      ctx.strokeStyle = "rgba(124,199,255,.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(this.player.x, this.player.y, this.player.r+1, 0, Math.PI*2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    drawThreat(){
+      const t = this.threat;
+      ctx.save();
+      // shadow blob
+      const r = 22 + this.danger*10;
+      const g = ctx.createRadialGradient(t.x, t.y, 4, t.x, t.y, r);
+      g.addColorStop(0, "rgba(0,0,0,.0)");
+      g.addColorStop(0.45, "rgba(0,0,0,.35)");
+      g.addColorStop(1, "rgba(0,0,0,.85)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r, 0, Math.PI*2);
+      ctx.fill();
+
+      // a faint rim (not a jumpscare, just “there”)
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = "rgba(255,255,255,.12)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r-6, 0, Math.PI*2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    drawGrain(alpha){
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // very light noise via tiny rectangles
+      const step = 6;
+      ctx.fillStyle = "rgba(255,255,255,.08)";
+      for (let y=0; y<this.height; y+=step){
+        for (let x=0; x<this.width; x+=step){
+          if (Math.random() < 0.03){
+            ctx.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+      ctx.restore();
+    }
+  }
+
+  // RoundRect polyfill for older browsers
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2);
+      this.beginPath();
+      this.moveTo(x+r, y);
+      this.arcTo(x+w, y, x+w, y+h, r);
+      this.arcTo(x+w, y+h, x, y+h, r);
+      this.arcTo(x, y+h, x, y, r);
+      this.arcTo(x, y, x+w, y, r);
+      this.closePath();
+      return this;
+    };
+  }
+
+  // ---------- Boot ----------
+  let game = new Game();
+
+  function frame(){
+    const t = now();
+    const dt = Math.min(0.033, (t - game.lastT) / 1000);
+    game.lastT = t;
+
+    game.update(dt);
+    game.draw();
+
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Input ----------
+  window.addEventListener('keydown', (e) => {
+    if (modalBackdrop.classList.contains('show')) return;
+
+    const k = e.key.toLowerCase();
+    if (k === 'w' || k === 'a' || k === 's' || k === 'd'){
+      game.keys.add(k);
+    }
+    if (k === 'h'){
+      game.hintLevel = clamp(game.hintLevel + 1, 0, 2);
+      game.syncUI();
+      game.pineSpeak(game.hintForRoom());
+      logLine("HINT", `Hint level ${game.hintLevel + 1}`);
+    }
+    if (k === 'e'){
+      // try hide at nearest hide spot in range
+      const near = game.nearestHighlight();
+      if (near && near.type === "hide"){
+        game.tryHideAt(near.id);
+      } else {
+        game.pineSpeak("Nothing to hide in.\nFind a closet. An alcove. A lie.");
+      }
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if (game.keys.has(k)) game.keys.delete(k);
+  });
+
+  function canvasCoords(evt){
+    const r = canvas.getBoundingClientRect();
+    const x = (evt.clientX - r.left) * (game.width / r.width);
+    const y = (evt.clientY - r.top) * (game.height / r.height);
+    return {x, y};
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const p = canvasCoords(e);
+    game.mouse.x = p.x; game.mouse.y = p.y;
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (modalBackdrop.classList.contains('show')) return;
+    const p = canvasCoords(e);
+    game.click(p.x, p.y);
+  });
+
+  // Buttons
+  document.getElementById('restartBtn').addEventListener('click', () => game.restart());
+
+  // Start
+  resize();
+  frame();
+
+})();
+</script>
+</body>
+</html>

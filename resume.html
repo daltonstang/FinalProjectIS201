@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dalton Stanger | Business Student</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1f2933;
+            --secondary: #4b5563;
+            --accent: #2563eb;
+            --background: #f9fafb;
+            --card: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 48px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.6rem;
+            letter-spacing: 1px;
+        }
+
+        header h2 {
+            margin: 8px 0 16px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 0.95rem;
+        }
+
+        .contact a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        section {
+            margin-bottom: 36px;
+        }
+
+        section h3 {
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .item {
+            margin-bottom: 20px;
+        }
+
+        .item h4 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .item .meta {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-bottom: 6px;
+        }
+
+        ul {
+            padding-left: 18px;
+            margin: 8px 0 0;
+        }
+
+        ul li {
+            margin-bottom: 6px;
+        }
+
+        .skills {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .skill {
+            background: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            margin-top: 40px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Dalton Stanger</h1>
+        <h2>Business Student at Brigham Young University</h2>
+
+        <div class="contact">
+            <span>📍 Provo, UT</span>
+            <span>📞 (208) 644-0514</span>
+            <span>✉️ daltonstang@icloud.com</span>
+            <a href="https://www.linkedin.com/in/dalton-stanger" target="_blank">LinkedIn</a>
+        </div>
+    </header>
+
+    <section>
+        <h3>Profile</h3>
+        <p>
+            Ambitious business student specializing in marketing, content creation,
+            and AI-assisted problem solving. Experienced in sales, communication,
+            and project execution. Active member of BYU’s AI in Business Society
+            with hands-on experience using AI tools to improve efficiency, generate
+            content, and support business operations.
+        </p>
+    </section>
+
+    <section>
+        <h3>Education</h3>
+
+        <div class="item">
+            <h4>Brigham Young University</h4>
+            <div class="meta">Business Major | GPA: 3.92 | 2025 – Present</div>
+        </div>
+
+        <div class="item">
+            <h4>College of Southern Idaho</h4>
+            <div class="meta">Associate of Arts | GPA: 3.90 | Graduated May 2025</div>
+        </div>
+    </section>
+
+    <section>
+        <h3>Work Experience</h3>
+
+        <div class="item">
+            <h4>Brigham Young University — Delivery Driver</h4>
+            <div class="meta">Provo, UT | Sep 2025 – Present</div>
+            <ul>
+                <li>Review and organize daily food orders to ensure accuracy.</li>
+                <li>Coordinate with receiving staff to resolve issues efficiently.</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <h4>Hawx Pest Control — Door-to-Door Sales Representative</h4>
+            <div class="meta">Louisville, KY | Feb 2025 – Jun 2025</div>
+            <ul>
+                <li>Engaged customers through daily outreach and persuasion.</li>
+                <li>Used CRM software to manage leads and follow-ups.</li>
+                <li>Built rapport with prospects to support team sales goals.</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <h4>Volunteer Missionary — Church of Jesus Christ of Latter-day Saints</h4>
+            <div class="meta">Belém, Brazil | Jan 2023 – Jan 2025</div>
+        </div>
+
+        <div class="item">
+            <h4>Independent RV Flipper — Self-Employed</h4>
+            <div class="meta">Twin Falls, ID | Summer 2021</div>
+            <ul>
+                <li>Evaluated, repaired, and restored a used RV for resale.</li>
+                <li>Increased resale value and earned profit through consignment.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h3>Leadership & Involvement</h3>
+
+        <div class="item">
+            <h4>Idaho DECA — State Champion</h4>
+            <ul>
+                <li>Led a state-winning community service business project.</li>
+                <li>Developed teamwork, planning, and communication skills.</li>
+            </ul>
+        </div>
+
+        <div class="item">
+            <h4>AI in Business Society — Member</h4>
+            <ul>
+                <li>Participate in workshops on applying AI in business.</li>
+                <li>Collaborate on AI-enhanced tools and processes.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h3>Skills</h3>
+
+        <div class="skills">
+            <div class="skill">Social Media Strategy</div>
+            <div class="skill">Content Creation</div>
+            <div class="skill">AI Tools (ChatGPT, Prompt Engineering)</div>
+            <div class="skill">Canva</div>
+            <div class="skill">Copywriting</div>
+            <div class="skill">Sales Communication</div>
+            <div class="skill">Project Management</div>
+            <div class="skill">Data Analysis</div>
+            <div class="skill">Portuguese (Full Professional)</div>
+        </div>
+    </section>
+
+    <footer>
+        References available upon request
+    </footer>
+
+</div>
+
+</body>
+</html>
